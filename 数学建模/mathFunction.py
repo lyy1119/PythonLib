@@ -359,6 +359,8 @@ class MathFunction:
         '''
         if not self.func:
             raise ValueError("函数未正确初始化.")
+        if self.gradient:
+            return self.gradient
         res = []
         for index in range(self.dimansion):
             rawData = {"dimansion" : self.dimansion , "func" : {}}
@@ -378,9 +380,9 @@ class MathFunction:
             newFunc = MathFunction("" , rawMode=True , raw=rawData)
             res.append(newFunc)
 
-        self.gradient = res
         matrix = [[i] for i in res]
-        return MathFunction.UniversalMatrix(matrix)
+        self.gradient = MathFunction.UniversalMatrix(matrix)
+        return self.gradient
 
     def evaluate_gradient(self , x: list , format="float"):
         '''
@@ -393,7 +395,10 @@ class MathFunction:
         if not self.gradient:
             self.gradient_matrix()
         res = []
-        for i in self.gradient:
+        from copy import deepcopy
+        gradient = deepcopy(self.gradient)
+        gradient.transpose()
+        for i in gradient.data[0]: # 梯度的转置为行向量，行数为1
             res.append(i.evaluate(x)[format])
         matrix = [[i] for i in res]
         return {"raw" : res , "matrix" : MathFunction.DecimalMatrix(matrix)}
@@ -405,7 +410,10 @@ class MathFunction:
             self.gradient_matrix()
         # 黑塞矩阵即对梯度再次求偏导，转置这些梯度的梯度，合并即可
         res = []
-        for i in self.gradient:
+        from copy import deepcopy
+        gradient = deepcopy(self.gradient)
+        gradient.transpose()
+        for i in gradient.data[0]:
             gradientOfgradient = i.gradient_matrix()
             gradientOfgradient.transpose()
             res = res + gradientOfgradient.data
