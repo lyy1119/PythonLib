@@ -327,6 +327,8 @@ class MathFunction:
         '''
         x: list 按照index，传入各变量(0 对应 x1)的值,值为必须为float,程序在处理前会转化为Deciaml
         '''
+        if type(x) == self.DecimalMatrix: # 兼容直接传入列向量
+            x = x.data
         if len(x) != self.dimansion:
             raise ValueError(f"传入的向量与函数维度不符合：X的维度为{len(x)}而函数的维度为{self.dimansion}")
         if type(x[0]) == list:  # 兼容列向量
@@ -451,6 +453,7 @@ if __name__ == "__main__":
         [2],
         [1]
     ]
+    x = MathFunction.DecimalMatrix(x)
     value = function.evaluate(x)
     print(r'print(value["str"])')
     print("[Out]: " , end='')
