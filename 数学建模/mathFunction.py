@@ -61,7 +61,7 @@ class MathFunction:
             rowBData = deepcopy(self.data[rowB])
             self.data[rowB] = rowAData
             self.data[rowA] = rowBData
-        
+
         def transpose(self):
             self.data = [[self.data[i][j] for i in range(self.row)] for j in range(self.col)]
             return self
@@ -96,12 +96,12 @@ class MathFunction:
                         temp = temp + front.data[row][i] * after.data[i][colum]
                     res[row][colum] = temp
             return MathFunction.UniversalMatrix(res)
-        
+
         def __rmul__(self , other):
             # 左乘
             newData = [[j*other for j in i] for i in self.data]
             return type(self)(newData)
-        
+
         def __add__(self , other):
             if self.row == other.row and self.col == other.col:
                 newData = [[self.data[i][j] + other.data[i][j] for j in range(self.col)] for i in range(self.row)]
@@ -347,7 +347,7 @@ class MathFunction:
                     monomialRes = monomialRes * (x[index]**power)
             res = res + monomialRes
         return {"str" : str(res) , "float" : float(res) , "Decimal" : res }
-    
+
     def gradient_matrix(self):
         '''
         返回的式UniversalMatrix
@@ -419,7 +419,7 @@ class MathFunction:
             res = res + gradientOfgradient.data
         self.hessianMatrix = MathFunction.UniversalMatrix(res)
         return self.hessianMatrix
-    
+
     def evaluate_hessian_matrix(self , x: list):
         res = [[self.hessianMatrix.data[i][j].evaluate(x)["Decimal"] for j in range(self.dimansion)] for i in range(self.dimansion)]
         return MathFunction.DecimalMatrix(res)
@@ -439,7 +439,7 @@ if __name__ == "__main__":
     print(function.func)
     print(f"函数维度（变量的数量）:{function.dimansion}")
     print("测试成功！")
-    
+
     print()
 
     print("（2）测试求函数值")
