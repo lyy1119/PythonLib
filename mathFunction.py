@@ -389,9 +389,8 @@ class MathFunction:
     def evaluate_gradient(self , x: list , format="float"):
         '''
         formate: 输出格式。str、decimal、float
-        返回结果有两种形式：
-        "raw" : [1 , 1 , 1 , ...]
-        "matrix": MathFunction.DeciamlMatrix [[1],[1] ...]
+        返回结果形式： 列向量
+        MathFunction.DeciamlMatrix [[1],[1] ...]
         '''
         # 不用检查维度是否对应，在evaluate中会检查
         if not self.gradient:
@@ -403,7 +402,7 @@ class MathFunction:
         for i in gradient.data[0]: # 梯度的转置为行向量，行数为1
             res.append(i.evaluate(x)[format])
         matrix = [[i] for i in res]
-        return {"raw" : res , "matrix" : MathFunction.DecimalMatrix(matrix)}
+        return MathFunction.DecimalMatrix(matrix)
 
     def hessian_matrix(self):
         if self.hessianMatrix:
@@ -468,7 +467,7 @@ if __name__ == "__main__":
     print(gradient)
     print("x = [1,1,1,1,1]")
     x = [1,1,1,1,1]
-    r = function.evaluate_gradient(x)["matrix"]
+    r = function.evaluate_gradient(x)
     print("梯度为X=")
     print(r)
     print("测试成功!")
