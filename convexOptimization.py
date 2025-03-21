@@ -20,7 +20,7 @@ def evaluate(function , queue , x0: MathFunction.DecimalMatrix):
 class MethodType(Enum):
     goldenSection = 1
 
-class Question:
+class Problem:
     def __init__(self , function: str , x0: list , t0: float):
         '''
         function = x1^1 + 3*x2^2 + ...
@@ -32,7 +32,7 @@ class Question:
         self.t0 = Decimal(t0)
         pass
 
-class OneDimansionOptimization(Question):
+class OneDimansionOptimization(Problem):
 
     def __init__(self, function, x0, t0 , s: list , epsilonf: float , epsilonx: float , method: MethodType):
         '''
