@@ -483,3 +483,12 @@ if __name__ == "__main__":
     print("两矩阵相加 a+b:")
     print(a+b)
     print("测试成功")
+
+    print()
+
+    print("（11）矩阵负号运算测试：")
+    a = MathFunction.DecimalMatrix([[1,2,3]])
+    print("原矩阵a:")
+    print(a)
+    print("-a:")
+    print(-a)
