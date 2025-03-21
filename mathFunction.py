@@ -160,6 +160,13 @@ class MathFunction:
                 self.data[i] = deepcopy(self.data[i][self.row::])
             return self
 
+        def __rmul__(self, other):
+            if type(other) == float:
+                other = Decimal(str(other))
+            elif type(other) == str:
+                other = Decimal(other)
+            return super().__rmul__(other)
+
     from enum import Enum
     class ParseType(Enum):
         coefficient = 1
