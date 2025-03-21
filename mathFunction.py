@@ -195,7 +195,8 @@ class MathFunction:
         ]
         '''
         res = []
-        queue = []
+        from collections import deque
+        queue = deque()
         empty = False # 用于解析最后一个单项式及循环的退出
         filtered = False # 遇到左括号开启，右括号关闭（对于负次数）
         s = list(s)
@@ -212,7 +213,7 @@ class MathFunction:
                     # 系数、变量、次数
                     # 系数、变量及次数之间使用*号隔开
                     # -xn需要特殊处理
-                    j = queue.pop(0)
+                    j = queue.popleft()
                     if j == "*":
                         monomial.append("")
                     else: # j != "*":
