@@ -80,6 +80,9 @@ class Matrix:
             # 左乘
             newData = [[j*other for j in i] for i in self.data]
             return type(self)(newData)
+        
+        def __neg__(self):
+            return -1*self
 
         def __add__(self , other):
             if self.row == other.row and self.col == other.col:
