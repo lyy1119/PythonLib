@@ -215,31 +215,27 @@ if __name__ == "__main__":
 # 黄金分割测试
     print()
     q = OneDimansionOptimization(
-        "x1^2 + 2*x1",
-        [0],
+        "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
+        [2 , 2],
         0.1,
-        [1],
-        0.01,
-        0.01,
+        [0.707 , 0.707],
+        0.15,
+        0.1,
         MethodType.goldenSection
     )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
     print(q.solve(50))
-    #q.get_search_interval()
-    #print(q.searchInterval)
 
 # 二次插值测试 
     print()
     q = OneDimansionOptimization(
-        "x1^2 + 2*x1",
-        [0],
+        "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
+        [2 , 2],
         0.1,
-        [1],
-        0.01,
-        0.01,
+        [0.707 , 0.707],
+        0.15,
+        0.1,
         MethodType.quadraticInterpolation
     )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
     print(q.solve(50))
-    #q.get_search_interval()
-    #print(q.searchInterval)
