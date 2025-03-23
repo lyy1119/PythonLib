@@ -223,40 +223,32 @@ class MultidimensionOptimization(OnedimensionOptimization):
         s = [0] # 放报错用
         super().__init__(function, x0, t0, s, epsilonx, epsilonf)
         self.oneDimensionProblemMethod = MethodType.goldenSection
-#    def __init__(self, function, x0, t0 , epsilonx: float , epsilonf: float):
-#        super().__init__(function, x0, t0)
-#        #self.strFunction = function
-#        #self.rawX0 = x0
-#        self.epsilonx = epsilonx
-#        self.epsilonf = epsilonf
-#        self.res = None
-#        self.oneDimensionProblemMethod=MethodType.goldenSection
 
-
-    def coordinate_descent(self , epsilon=0):
+    def coordinate_descent(self , epsilon=0 , maxStep=1000):
         if epsilon == 0:
             epsilon = self.epsilonx
         dimension = self.function.dimension
+        step = 0
         while True:
             a = Decimal(0)
             for i in range(dimension):
                 s = [0 for j in range(dimension)]
                 s[i] = 1
                 self.set_s(s)
-
-                # 使用一维优化问题求解最优步长
-                #p = OnedimensionOptimization(self.strFunction , self.x0 , self.t0 , s , self.epsilonx , self.epsilonf)
                 _a , _x , _f = super().solve(method=self.oneDimensionProblemMethod)
-                a = max(a , _a)
+                a = max(a , abs(_a))
                 self.set_x0_from_deciam_matrix(_x)
+            if step >= maxStep:
+                raise ValueError("迭代达到最大步长.")
             if abs(a) <= self.epsilonx:
                 break
+            step += 1
         self.res = [a , self.x0 , _f]
         return self.res
 
-    def solve(self , method=MethodType.coordinateDescent):
+    def solve(self , method=MethodType.coordinateDescent , maxStep=1000):
         if method == MethodType.coordinateDescent:
-            return self.coordinate_descent()
+            return self.coordinate_descent(maxStep=maxStep)
 
 if __name__ == "__main__":
     # 寻找区间测试
@@ -285,7 +277,7 @@ if __name__ == "__main__":
     q = MultidimensionOptimization(
         "4 + 4.5*x1 - 4*x2 + x1^2 + 2*x2^2 - 2*x1*x2 + x1^4 - 2*x1^2*x2",
         [2 , 2.2],
-        0.000001,
+        0.01,
         0.01,
         0.01
     )
