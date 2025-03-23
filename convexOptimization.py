@@ -19,6 +19,7 @@ def evaluate(function , queue , x0: MathFunction.DecimalMatrix):
 
 class MethodType(Enum):
     goldenSection = 1
+    quadraticInterpolation = 2
 
 class Problem:
     def __init__(self , function: str , x0: list , t0: float):
@@ -63,6 +64,64 @@ class OneDimansionOptimization(Problem):
         if queue[2] == None:
             queue[2] = [a + q*(b-a) , s , None , None]
         evaluate(self.function , queue , self.x0)
+    
+    def quadratic_interpolation(self):
+        if self.searchInterval[0] == None:
+            self.get_search_interval()
+        # 计算初始点
+        a1 = self.searchInterval[0]
+        a3 = self.searchInterval[1]
+        a2 = (a1+a3)/2
+        quadraticPoint = [
+            [a1 , self.s , None , None], 
+            [a2 , self.s , None , None],
+            [a3 , self.s , None , None]
+        ]
+        def cal_k1(points: list):
+            f3 = points[2][3]
+            f1 = points[0][3]
+            a3 = points[2][0]
+            a1 = points[0][0]
+            return (f3-f1)/(a3-a1)
+        def cal_k2(points: list , k1):
+            f2 = points[1][3]
+            f1 = points[0][3]
+            a2 = points[1][0]
+            a1 = points[0][0]
+            a3 = points[2][0]
+            return ((f2-f1)/(a2-a1)-k1)/(a2-a3)
+        evaluate(self.function , quadraticPoint , self.x0)
+        while True:
+            k1 = cal_k1(quadraticPoint)
+            k2 = cal_k2(quadraticPoint , k1)
+            if k2 == 0:
+                break
+            def cal_ap(points , k1 , k2) -> list:
+                return [Decimal("0.5")*(points[0][0] + points[2][0]-k1/k2) , self.s , None , None]
+            ap = cal_ap(quadraticPoint , k1 , k2)
+            if (ap[0] - quadraticPoint[0][0])*(quadraticPoint[2][0] - ap[0]) < 0:
+                break
+            f2 = quadraticPoint[1][3]
+            fp = Decimal(0)
+            # 插入ap
+            for i in range(3):
+                if quadraticPoint[i][0] > ap[0]:
+                    quadraticPoint.insert(i , ap)
+                    evaluate(self.function , quadraticPoint , self.x0)
+                    fp = quadraticPoint[i][3]
+                    break
+            
+            # 弹出
+            for i in range(1,3):
+                if quadraticPoint[i-1][3] > quadraticPoint[i][3] and quadraticPoint[i+1][3] > quadraticPoint[i][3]:
+                    # 找到高低高
+                    quadraticPoint = quadraticPoint[i-1:i+2]
+            ef = abs(f2)
+            ef1 = abs(f2 - fp)
+            if ef1/ef < self.epsilonf:
+                break
+        self.res = [quadraticPoint[1][0] , quadraticPoint[1][2] , quadraticPoint[1][3]]
+        return self.res
 
     def golden_section(self , jMax: int):
         '''
@@ -109,6 +168,8 @@ class OneDimansionOptimization(Problem):
     def solve(self , maxSteps: int):
         if self.method == MethodType.goldenSection:
             return self.golden_section(maxSteps)
+        elif self.method == MethodType.quadraticInterpolation:
+            return self.quadratic_interpolation()
 
 def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalMatrix , t0: float , s: MathFunction.DecimalMatrix):
     '''
@@ -147,21 +208,34 @@ def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalM
     return [i[0] for i in res]
 
 if __name__ == "__main__":
+    # 寻找区间测试
     function = MathFunction(polynomial="3*x1^3 - 8*x1 + 9")
     print(determine_search_interval(function , MathFunction.DecimalMatrix([[1.8]]) , 0.1 , MathFunction.DecimalMatrix([[1]])))
 
-    # 
+# 黄金分割测试
     print()
     q = OneDimansionOptimization(
-        "x1^2 + 2*x1",
-        [0],
+        "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
+        [2 , 2],
         0.1,
-        [1],
-        0.01,
-        0.01,
+        [0.707 , 0.707],
+        0.15,
+        0.1,
         MethodType.goldenSection
     )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
     print(q.solve(50))
-    #q.get_search_interval()
-    #print(q.searchInterval)
+
+# 二次插值测试 
+    print()
+    q = OneDimansionOptimization(
+        "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
+        [2 , 2],
+        0.1,
+        [0.707 , 0.707],
+        0.15,
+        0.1,
+        MethodType.quadraticInterpolation
+    )
+    q.searchInterval = [Decimal(-3) , Decimal(5)]
+    print(q.solve(50))
