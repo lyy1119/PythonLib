@@ -25,6 +25,7 @@ class MethodType(Enum):
     # 多维优化
     coordinateDescent = 3
     gradientDescent = 4
+    dampedNewton = 5
 
 class Problem:
     def __init__(self , function: str , x0: list , t0: float):
@@ -63,6 +64,9 @@ class OnedimensionOptimization(Problem):
         self.res = None
 
     def set_s(self , s):
+        '''
+        s支持传DecimalMatrix , 行list
+        '''
         if type(s) == MathFunction.DecimalMatrix:
             self.s = s
         else:
@@ -273,11 +277,35 @@ class MultidimensionOptimization(OnedimensionOptimization):
         self.res = [x , f , step]
         return self.res
 
+    def damped_newton(self , epsilon , maxStep=1000):
+        step = 0
+        x = self.x0
+        f = self.function.evaluate(x)["Decimal"]
+        while True:
+            h = self.function.evaluate_hessian_matrix(x)
+            g = self.function.evaluate_gradient(x , "Decimal")
+            h.inverse()
+            s = - h*g
+            self.set_s(s)
+            # 一维优化求步长
+            a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+            self.set_x0_from_decimal_matrix(x)
+            step += 1
+            sNorm = s.frobenius_norm()
+            if abs(a*sNorm) <= epsilon:
+                break
+            if step > maxStep:
+                break
+        self.res = [x , f , step]
+        return self.res
+
     def solve(self , method=MethodType.coordinateDescent , maxStep=1000):
         if method == MethodType.coordinateDescent:
             return self.coordinate_descent(maxStep=maxStep)
         elif method == MethodType.gradientDescent:
             return self.gradient_descent(self.epsilonx , maxStep)
+        elif method == MethodType.dampedNewton:
+            return self.damped_newton(self.epsilonx , maxStep)
 
 
 if __name__ == "__main__":
@@ -327,3 +355,14 @@ if __name__ == "__main__":
         0.01
     )
     print(q.solve(method=MethodType.gradientDescent)[1])
+
+# 阻尼牛顿法
+    print()
+    q = MultidimensionOptimization(
+        "x1^2 - x1*x2 + x2^2 + 2*x1 - 4*x2",
+        [2 , 2],
+        0.01,
+        0.01,
+        0.01
+    )
+    print(q.solve(method=MethodType.dampedNewton)[0])

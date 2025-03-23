@@ -347,6 +347,11 @@ class MathFunction:
         return self.hessianMatrix
 
     def evaluate_hessian_matrix(self , x: list):
+        '''
+        x支持传入 列list ， 行list ， DecimalMatrix
+        '''
+        if not self.hessianMatrix:
+            self.hessian_matrix()
         res = [[self.hessianMatrix.data[i][j].evaluate(x)["Decimal"] for j in range(self.dimension)] for i in range(self.dimension)]
         return MathFunction.DecimalMatrix(res)
 
