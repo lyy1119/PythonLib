@@ -250,7 +250,7 @@ class MathFunction:
     # 功能函数
     def evaluate(self , x: list):
         '''
-        x: list 按照index，传入各变量(0 对应 x1)的值,值为必须为float,程序在处理前会转化为Deciaml
+        x: list 按照index，传入各变量(0 对应 x1)的值,值为必须为float,程序在处理前会转化为Decimal
         '''
         if type(x) == self.DecimalMatrix: # 兼容直接传入列向量
             x = x.data
@@ -315,7 +315,7 @@ class MathFunction:
         '''
         formate: 输出格式。str、decimal、float
         返回结果形式： 列向量
-        MathFunction.DeciamlMatrix [[1],[1] ...]
+        MathFunction.DecimalMatrix [[1],[1] ...]
         '''
         # 不用检查维度是否对应，在evaluate中会检查
         if not self.gradient:
