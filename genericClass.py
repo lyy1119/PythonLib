@@ -98,3 +98,36 @@ class Matrix:
                 return type(self)(newData)
             else:
                 raise ValueError(f"相加两矩阵的行列数目不对应，前者row={self.row},col={self.col} , 后者row={other.row},col={self.col}")
+
+class Fraction:
+    def __init__(self , numerator , denominator):
+        self.numerator = numerator
+        self.denominator = denominator
+    
+    def __str__(self):
+        return f"{self.numerator}/{self.denominator}"
+
+    def __add__(self , other):
+        if type(other) != type(self):
+            raise ValueError(f"运算类型不相同，{type(self)}+{type(other)}")
+        numerator = self.numerator * other.denominator + self.denominator * other.numerator
+        denominator = self.denominator * other.denominator
+        return type(self)(numerator , denominator)
+
+    def __mul__(self , other):
+        numerator = self.numerator
+        denominator = self.denominator
+        if type(other) != type(self):
+            # 可能是类似数乘操作
+            numerator = numerator * other
+        else:
+            # 分数相乘
+            numerator = numerator * other.numerator
+            denominator = denominator * other.denominator
+        return type(self)(numerator , denominator)
+
+    def __rmul__(self , other):
+        return self.__mul__(other)
+
+    def __neg__(self):
+        return -1*self
