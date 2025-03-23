@@ -18,8 +18,11 @@ def evaluate(function , queue , x0: MathFunction.DecimalMatrix):
             i[3] = function.evaluate(i[2])["Decimal"] # 计算F(X)
 
 class MethodType(Enum):
+    # 一维优化
     goldenSection = 1
     quadraticInterpolation = 2
+    # 多维优化
+    coordinateDescent = 3
 
 class Problem:
     def __init__(self , function: str , x0: list , t0: float):
@@ -33,16 +36,23 @@ class Problem:
         self.t0 = Decimal(t0)
         pass
 
-class MultiDimansionOptimization(Problem):
+class MultidimensionOptimization(Problem):
     def __init__(self, function, x0, t0 , epsilonx: float , epsilonf: float):
         super().__init__(function, x0, t0)
         self.epsilonx = epsilonx
         self.epsilonf = epsilonf
+        self.res = None
 
-    def solve(method: MethodType):
-        pass
+    def coordinate_descent(self):
+        dimension = self.function.dimension
 
-class OneDimansionOptimization(Problem):
+        return self.res
+
+    def solve(self , method=MethodType.coordinateDescent):
+        if method == MethodType.coordinateDescent:
+            return self.coordinate_descent()
+
+class OnedimensionOptimization(Problem):
 
     def __init__(self, function, x0, t0 , s: list , epsilonx: float , epsilonf: float):
         '''
@@ -221,7 +231,7 @@ if __name__ == "__main__":
 
 # 黄金分割测试
     print()
-    q = OneDimansionOptimization(
+    q = OnedimensionOptimization(
         "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
         [2 , 2],
         0.1,
