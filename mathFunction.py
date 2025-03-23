@@ -75,7 +75,7 @@ class MathFunction:
                 for i in row:
                     res = res + i**2
             from math import sqrt
-            return sqrt(res)
+            return Decimal(str(sqrt(res)))
 
         def __rmul__(self, other):
             if type(other) == float:
