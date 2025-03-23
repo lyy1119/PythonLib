@@ -470,6 +470,9 @@ if __name__ == "__main__":
     print("5*a:")
     print(5*a)
     print("测试成功！")
+    print("a/5:")
+    print(a/5)
+    print("测试成功！")
 
     print()
 
