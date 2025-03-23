@@ -36,11 +36,15 @@ class Problem:
 class MultiDimansionOptimization(Problem):
     def __init__(self, function, x0, t0 , epsilonx: float , epsilonf: float):
         super().__init__(function, x0, t0)
-        
+        self.epsilonx = epsilonx
+        self.epsilonf = epsilonf
+
+    def solve(method: MethodType):
+        pass
 
 class OneDimansionOptimization(Problem):
 
-    def __init__(self, function, x0, t0 , s: list , epsilonx: float , epsilonf: float , method: MethodType):
+    def __init__(self, function, x0, t0 , s: list , epsilonx: float , epsilonf: float):
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
@@ -48,7 +52,6 @@ class OneDimansionOptimization(Problem):
         s = [1,2,3]   [1]
         epsilonf 必须传入
         epsilonx 必须传入
-        method
         '''
         super().__init__(function, x0, t0)
 
@@ -56,7 +59,6 @@ class OneDimansionOptimization(Problem):
         self.searchInterval = [None , None] # 应该为decimal
         self.epsilonf = epsilonf
         self.epsilonx = epsilonx
-        self.method = method
         self.res = None
 
     def calculate_golden_point(self , queue: deque):
@@ -170,10 +172,10 @@ class OneDimansionOptimization(Problem):
     def get_search_interval(self):
         self.searchInterval = determine_search_interval(self.function , self.x0 , self.t0 , self.s)
 
-    def solve(self , maxSteps: int):
-        if self.method == MethodType.goldenSection:
+    def solve(self , method=MethodType.goldenSection , maxSteps=100):
+        if method == MethodType.goldenSection:
             return self.golden_section(maxSteps)
-        elif self.method == MethodType.quadraticInterpolation:
+        elif method == MethodType.quadraticInterpolation:
             return self.quadratic_interpolation()
 
 def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalMatrix , t0: float , s: MathFunction.DecimalMatrix):
@@ -226,21 +228,11 @@ if __name__ == "__main__":
         [0.707 , 0.707],
         0.1,
         0.15,
-        MethodType.goldenSection
     )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
-    print(q.solve(50))
+    print(q.solve(MethodType.goldenSection , 50))
 
 # 二次插值测试 
     print()
-    q = OneDimansionOptimization(
-        "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
-        [2 , 2],
-        0.1,
-        [0.707 , 0.707],
-        0.1,
-        0.15,
-        MethodType.quadraticInterpolation
-    )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
-    print(q.solve(50))
+    print(q.solve(MethodType.quadraticInterpolation , 50))
