@@ -63,6 +63,44 @@ class OneDimansionOptimization(Problem):
         if queue[2] == None:
             queue[2] = [a + q*(b-a) , s , None , None]
         evaluate(self.function , queue , self.x0)
+    
+    def quadratic_interpolation(self):
+        if self.searchInterval[0] == None:
+            self.get_search_interval()
+        # 计算初始点
+        a1 = self.searchInterval[0]
+        a3 = self.searchInterval[1]
+        a2 = (a1+a3)/2
+        quadraticPoint = [
+            [a1 , self.s , None , None], 
+            [a2 , self.s , None , None],
+            [a3 , self.s , None , None]
+        ]
+        def cal_k1(points: list):
+            f3 = points[2][3]
+            f1 = points[0][3]
+            a3 = points[2][0]
+            a1 = points[0][0]
+            return (f3-f1)/(a3-a1)
+        def cal_k2(points: list , k1):
+            f2 = points[1][3]
+            f1 = points[0][3]
+            a2 = points[1][0]
+            a1 = points[0][0]
+            a3 = points[2][0]
+            return ((f2-f1)/(a2-a1)-k1)/(a2-a3)
+        evaluate(self.function , quadraticPoint , self.x0)
+        while True:
+            k1 = cal_k1(quadraticPoint)
+            k2 = cal_k2(quadraticPoint , k1)
+            if k2 == 0:
+                break
+            def cal_ap(points , k1 , k2) -> list:
+                return Decimal("0.5")*(points[0][0] + points[2][0]-k1/k2)
+            ap = cal_ap(quadraticPoint , k1 , k2)
+            if (ap - quadraticPoint[0][0])*(quadraticPoint[2][0] - ap) < 0:
+                break
+
 
     def golden_section(self , jMax: int):
         '''
