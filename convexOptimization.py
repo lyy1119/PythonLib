@@ -33,9 +33,14 @@ class Problem:
         self.t0 = Decimal(t0)
         pass
 
+class MultiDimansionOptimization(Problem):
+    def __init__(self, function, x0, t0 , epsilonx: float , epsilonf: float):
+        super().__init__(function, x0, t0)
+        
+
 class OneDimansionOptimization(Problem):
 
-    def __init__(self, function, x0, t0 , s: list , epsilonf: float , epsilonx: float , method: MethodType):
+    def __init__(self, function, x0, t0 , s: list , epsilonx: float , epsilonf: float , method: MethodType):
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
@@ -219,8 +224,8 @@ if __name__ == "__main__":
         [2 , 2],
         0.1,
         [0.707 , 0.707],
-        0.15,
         0.1,
+        0.15,
         MethodType.goldenSection
     )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
@@ -233,8 +238,8 @@ if __name__ == "__main__":
         [2 , 2],
         0.1,
         [0.707 , 0.707],
-        0.15,
         0.1,
+        0.15,
         MethodType.quadraticInterpolation
     )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
