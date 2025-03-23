@@ -92,10 +92,10 @@ class MathFunction:
         if rawMode: # 用于梯度和黑塞矩阵
             if not raw:
                 raise ValueError("使用raw模式输入但是没有传入数据")
-            self.dimansion = raw["dimansion"]
+            self.dimension = raw["dimension"]
             self.func = raw["func"]
         else:
-            self.dimansion = 0 # 在decode_from_list中赋值，以最大的为准
+            self.dimension = 0 # 在decode_from_list中赋值，以最大的为准
             self.func = self.__decode_from_list(self.__string_to_polynomial(polynomial))
         self.gradient = None
         self.hessianMatrix = None
@@ -180,7 +180,7 @@ class MathFunction:
                 key.append(Decimal(j[1]))
             # 将key 列表转化为元组
             key = tuple(key)
-            self.dimansion = max(self.dimansion , len(key))
+            self.dimension = max(self.dimension , len(key))
             if value == None: # 没有解析到系数
                 # 当系数为1时不用写系数
                 value = Decimal(1)
@@ -246,8 +246,8 @@ class MathFunction:
         '''
         if type(x) == self.DecimalMatrix: # 兼容直接传入列向量
             x = x.data
-        if len(x) != self.dimansion:
-            raise ValueError(f"传入的向量与函数维度不符合：X的维度为{len(x)}而函数的维度为{self.dimansion}")
+        if len(x) != self.dimension:
+            raise ValueError(f"传入的向量与函数维度不符合：X的维度为{len(x)}而函数的维度为{self.dimension}")
         if type(x[0]) == list:  # 兼容列向量
             x = MathFunction.raw_column_matrix_x_to_list(x)
         x = [Decimal(str(i)) for i in x]
@@ -281,8 +281,8 @@ class MathFunction:
         if self.gradient:
             return self.gradient
         res = []
-        for index in range(self.dimansion):
-            rawData = {"dimansion" : self.dimansion , "func" : {}}
+        for index in range(self.dimension):
+            rawData = {"dimension" : self.dimension , "func" : {}}
             # index : 0 -> x1 , 1 -> x2  ,... ...
             for powers , value in self.func.items():
                 if index > len(powers) - 1: # 原powers的存储格式为 只存到编号最大的变量，故可能存的长度少于维度
@@ -339,7 +339,7 @@ class MathFunction:
         return self.hessianMatrix
 
     def evaluate_hessian_matrix(self , x: list):
-        res = [[self.hessianMatrix.data[i][j].evaluate(x)["Decimal"] for j in range(self.dimansion)] for i in range(self.dimansion)]
+        res = [[self.hessianMatrix.data[i][j].evaluate(x)["Decimal"] for j in range(self.dimension)] for i in range(self.dimension)]
         return MathFunction.DecimalMatrix(res)
 
 if __name__ == "__main__":
@@ -355,7 +355,7 @@ if __name__ == "__main__":
     print("[Out]: " , end='')
     print(function)
     print(function.func)
-    print(f"函数维度（变量的数量）:{function.dimansion}")
+    print(f"函数维度（变量的数量）:{function.dimension}")
     print("测试成功！")
 
     print()

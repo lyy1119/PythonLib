@@ -3,6 +3,7 @@ from decimal import Decimal
 from enum import Enum
 from collections import deque
 from copy import deepcopy
+from math import inf
 
 def evaluate(function , queue , x0: MathFunction.DecimalMatrix):
     '''
@@ -18,8 +19,11 @@ def evaluate(function , queue , x0: MathFunction.DecimalMatrix):
             i[3] = function.evaluate(i[2])["Decimal"] # 计算F(X)
 
 class MethodType(Enum):
+    # 一维优化
     goldenSection = 1
     quadraticInterpolation = 2
+    # 多维优化
+    coordinateDescent = 3
 
 class Problem:
     def __init__(self , function: str , x0: list , t0: float):
@@ -31,11 +35,16 @@ class Problem:
         self.function = MathFunction(function)
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0]) # 转化为列向量
         self.t0 = Decimal(t0)
-        pass
 
-class OneDimansionOptimization(Problem):
+    def set_x0_from_list(self , x0):
+        self.x0 = MathFunction.DecimalMatrix([[i] for i in x0])
+    
+    def set_x0_from_deciam_matrix(self , x0: MathFunction.DecimalMatrix):
+        self.x0 = x0
 
-    def __init__(self, function, x0, t0 , s: list , epsilonf: float , epsilonx: float , method: MethodType):
+class OnedimensionOptimization(Problem):
+
+    def __init__(self, function, x0, t0 , s: list , epsilonx: float , epsilonf: float):
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
@@ -43,7 +52,6 @@ class OneDimansionOptimization(Problem):
         s = [1,2,3]   [1]
         epsilonf 必须传入
         epsilonx 必须传入
-        method
         '''
         super().__init__(function, x0, t0)
 
@@ -51,8 +59,10 @@ class OneDimansionOptimization(Problem):
         self.searchInterval = [None , None] # 应该为decimal
         self.epsilonf = epsilonf
         self.epsilonx = epsilonx
-        self.method = method
         self.res = None
+
+    def set_s(self , s):
+        self.s = MathFunction.DecimalMatrix([[i] for i in s])
 
     def calculate_golden_point(self , queue: deque):
         a = queue[0][0]
@@ -165,10 +175,10 @@ class OneDimansionOptimization(Problem):
     def get_search_interval(self):
         self.searchInterval = determine_search_interval(self.function , self.x0 , self.t0 , self.s)
 
-    def solve(self , maxSteps: int):
-        if self.method == MethodType.goldenSection:
+    def solve(self , method=MethodType.goldenSection , maxSteps=1000):
+        if method == MethodType.goldenSection:
             return self.golden_section(maxSteps)
-        elif self.method == MethodType.quadraticInterpolation:
+        elif method == MethodType.quadraticInterpolation:
             return self.quadratic_interpolation()
 
 def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalMatrix , t0: float , s: MathFunction.DecimalMatrix):
@@ -207,6 +217,39 @@ def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalM
     res.sort()
     return [i[0] for i in res]
 
+
+class MultidimensionOptimization(OnedimensionOptimization):
+    def __init__(self, function, x0, t0, epsilonx, epsilonf):
+        s = [0] # 放报错用
+        super().__init__(function, x0, t0, s, epsilonx, epsilonf)
+        self.oneDimensionProblemMethod = MethodType.goldenSection
+
+    def coordinate_descent(self , epsilon=0 , maxStep=1000):
+        if epsilon == 0:
+            epsilon = self.epsilonx
+        dimension = self.function.dimension
+        step = 0
+        while True:
+            a = Decimal(0)
+            for i in range(dimension):
+                s = [0 for j in range(dimension)]
+                s[i] = 1
+                self.set_s(s)
+                _a , _x , _f = super().solve(method=self.oneDimensionProblemMethod)
+                a = max(a , abs(_a))
+                self.set_x0_from_deciam_matrix(_x)
+            if step >= maxStep:
+                raise ValueError("迭代达到最大步长.")
+            if abs(a) <= self.epsilonx:
+                break
+            step += 1
+        self.res = [a , self.x0 , _f]
+        return self.res
+
+    def solve(self , method=MethodType.coordinateDescent , maxStep=1000):
+        if method == MethodType.coordinateDescent:
+            return self.coordinate_descent(maxStep=maxStep)
+
 if __name__ == "__main__":
     # 寻找区间测试
     function = MathFunction(polynomial="3*x1^3 - 8*x1 + 9")
@@ -214,28 +257,31 @@ if __name__ == "__main__":
 
 # 黄金分割测试
     print()
-    q = OneDimansionOptimization(
+    q = OnedimensionOptimization(
         "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
         [2 , 2],
         0.1,
         [0.707 , 0.707],
-        0.15,
         0.1,
-        MethodType.goldenSection
+        0.15,
     )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
-    print(q.solve(50))
+    print(q.solve(MethodType.goldenSection , 50))
 
 # 二次插值测试 
     print()
-    q = OneDimansionOptimization(
-        "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
-        [2 , 2],
-        0.1,
-        [0.707 , 0.707],
-        0.15,
-        0.1,
-        MethodType.quadraticInterpolation
-    )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
-    print(q.solve(50))
+    print(q.solve(MethodType.quadraticInterpolation , 50))
+
+# 坐标轮换测试
+    q = MultidimensionOptimization(
+        "4 + 4.5*x1 - 4*x2 + x1^2 + 2*x2^2 - 2*x1*x2 + x1^4 - 2*x1^2*x2",
+        [2 , 2.2],
+        0.01,
+        0.01,
+        0.01
+    )
+    res = q.solve()
+    print(res)
+    for i in res:
+        print(i)
