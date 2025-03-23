@@ -24,6 +24,7 @@ class MethodType(Enum):
     quadraticInterpolation = 2
     # 多维优化
     coordinateDescent = 3
+    gradientDescent = 4
 
 class Problem:
     def __init__(self , function: str , x0: list , t0: float):
@@ -39,7 +40,7 @@ class Problem:
     def set_x0_from_list(self , x0):
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0])
     
-    def set_x0_from_deciam_matrix(self , x0: MathFunction.DecimalMatrix):
+    def set_x0_from_decimal_matrix(self , x0: MathFunction.DecimalMatrix):
         self.x0 = x0
 
 class OnedimensionOptimization(Problem):
@@ -62,7 +63,10 @@ class OnedimensionOptimization(Problem):
         self.res = None
 
     def set_s(self , s):
-        self.s = MathFunction.DecimalMatrix([[i] for i in s])
+        if type(s) == MathFunction.DecimalMatrix:
+            self.s = s
+        else:
+            self.s = MathFunction.DecimalMatrix([[i] for i in s])
 
     def calculate_golden_point(self , queue: deque):
         a = queue[0][0]
@@ -237,7 +241,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 self.set_s(s)
                 _a , _x , _f = super().solve(method=self.oneDimensionProblemMethod)
                 a = max(a , abs(_a))
-                self.set_x0_from_deciam_matrix(_x)
+                self.set_x0_from_decimal_matrix(_x)
             if step >= maxStep:
                 raise ValueError("迭代达到最大步长.")
             if abs(a) <= self.epsilonx:
@@ -246,9 +250,35 @@ class MultidimensionOptimization(OnedimensionOptimization):
         self.res = [a , self.x0 , _f]
         return self.res
 
+    def gradient_descent(self , epsilon , maxStep=1000):
+        step = 0
+        x = self.x0
+        f = self.function.evaluate(x)["Decimal"]
+        while True:
+            g = self.function.evaluate_gradient(x , format="Decimal")
+            gNorm = g.frobenius_norm()
+            if gNorm == 0:
+                # 对于凸优化，gnorm为0时，即最优点（凸函数的hessian矩阵处处正定）
+                break
+            sMatrix = (- g / gNorm)
+            self.set_s(sMatrix)
+            # 调用父类一维优化
+            _ , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+            self.set_x0_from_decimal_matrix(x)
+            if abs(gNorm) <= epsilon:
+                break
+            step = step + 1
+            if step > maxStep:
+                break
+        self.res = [x , f , step]
+        return self.res
+
     def solve(self , method=MethodType.coordinateDescent , maxStep=1000):
         if method == MethodType.coordinateDescent:
             return self.coordinate_descent(maxStep=maxStep)
+        elif method == MethodType.gradientDescent:
+            return self.gradient_descent(self.epsilonx , maxStep)
+
 
 if __name__ == "__main__":
     # 寻找区间测试
@@ -276,12 +306,24 @@ if __name__ == "__main__":
 # 坐标轮换测试
     q = MultidimensionOptimization(
         "4 + 4.5*x1 - 4*x2 + x1^2 + 2*x2^2 - 2*x1*x2 + x1^4 - 2*x1^2*x2",
-        [2 , 2.2],
+        [0 , 0],
         0.01,
         0.01,
         0.01
     )
-    res = q.solve()
-    print(res)
-    for i in res:
-        print(i)
+    try:
+        res = q.solve()
+        for i in res:
+            print(i)
+    except ValueError as e:
+        print(e)
+
+
+    q = MultidimensionOptimization(
+        "x1^2 + 2*x2^2",
+        [0 , 0],
+        0.01,
+        0.01,
+        0.01
+    )
+    print(q.solve(method=MethodType.gradientDescent)[1])
