@@ -68,6 +68,14 @@ class MathFunction:
                 from copy import deepcopy
                 self.data[i] = deepcopy(self.data[i][self.row::])
             return self
+        
+        def frobenius_norm(self):
+            res = Decimal(0)
+            for row in self.data:
+                for i in row:
+                    res = res + i**2
+            from math import sqrt
+            return sqrt(res)
 
         def __rmul__(self, other):
             if type(other) == float:
