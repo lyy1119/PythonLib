@@ -80,7 +80,15 @@ class Matrix:
             # 左乘
             newData = [[j*other for j in i] for i in self.data]
             return type(self)(newData)
-        
+
+        def __truediv__(self , other):
+            from copy import deepcopy
+            newData = deepcopy(self.data)
+            for i in range(self.row):
+                for j in range(self.col):
+                    newData[i][j] /= other
+            return type(self)(newData)
+
         def __neg__(self):
             return -1*self
 
