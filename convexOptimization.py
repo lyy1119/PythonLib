@@ -26,6 +26,7 @@ class MethodType(Enum):
     gradientDescent = 4
     dampedNewton = 5
     conjugateDirection = 6
+    powell = 7
 
 class Problem:
     def __init__(self , function: str , x0: list , t0: float):
@@ -330,15 +331,10 @@ class MultidimensionOptimization(OnedimensionOptimization):
             _a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
             self.set_x0_from_decimal_matrix(x)
             step = step + 1
-            print("a=")
-            print(_a)
-            print("s=")
-            print(s)
         self.res = [x , f]
         return self.res
 
     def powell_method(self , epsilon , maxStep):
-        from collections import deque
         ss = []
         for i in range(self.function.dimension):
             s = [[0] for i in range(self.function.dimension)]
@@ -346,22 +342,66 @@ class MultidimensionOptimization(OnedimensionOptimization):
             s = MathFunction.DecimalMatrix(s)
             ss.append(s)
         k = 0
+        step = 0
         while True:
             k = k + 1
-            fList = []
-            for s in ss:
-                self.set_s(s)
+            # 本轮的起始点x0
+            x0 = self.x0
+            fList = [self.function.evaluate(x0)["Decimal"]]
+            print(fList[0])
+            for _s in ss:
+                self.set_s(_s)
                 a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+                fMin = f
+                print(f)
+                print(x)
+                print(f"a={a}")
                 self.set_x0_from_decimal_matrix(x)
                 fList.append(f)
-            deltaM = Decimal(0)
-            m = -1
-            for i in range(self.function.dimension - 1):
-                temp = fList[i] - fList[i+1]
+                step = step + 1
+            s = x - x0
+            x3 = 2*x - x0
+            f1 = self.function.evaluate(x0)["Decimal"]
+            # f2 = self.function.evaluate(x)["Decimal"]
+            # 此时x就是f对应的点
+            f2 = fMin
+            f3 = self.function.evaluate(x3)["Decimal"]
+            # 计算delta_m
+            deltaM = fList[0] - fList[1]
+            m = 0
+            for i in range(1 , self.function.dimension + 1):
+                temp = fList[i-1] - fList[i]
+                print(f"temp={temp}")
                 if temp > deltaM:
                     deltaM = temp
-                    m = i
-            
+                    m = i-1
+            print(m)
+            print(deltaM)
+            input()
+            if f3 < f1 and (f1 - 2*f2 + f3)*(f1-f2-deltaM)**2 < Decimal("0.5")*deltaM*(f1-f3)**2:
+                self.set_s(s)
+                a , x , fMin = super().solve(self.oneDimensionProblemMethod , maxStep)
+                f2 = fMin
+                # 删去本轮迭代中最大变化量方向
+                ss.pop(m)
+                # s方向从末尾补上（s=xn - x0）
+                ss.append(s)
+                # 设置优化点为下一轮迭代的起始点
+                self.set_x0_from_decimal_matrix(x)
+            elif f > f3:
+                self.set_x0_from_decimal_matrix(x3)
+                f2 = f3
+                fMin = f3
+            # 计算Dx，即相邻迭代点之间的长度
+            dx = (x0 - x).frobenius_norm()
+            print(f"{k}.\n x0=\n{x0} , x=\n{x}")
+            # 计算df
+            df = abs((f1-f2)/f1)
+            print(f"{k} . dx = {dx} , df = {df} , fmin={fMin}")
+            if dx < self.epsilonx or df < self.epsilonf:
+                break
+        self.res = [x , fMin , k , step]
+        return self.res
 
     def solve(self , method=MethodType.coordinateDescent , maxStep=1000):
         if method == MethodType.coordinateDescent:
@@ -372,6 +412,8 @@ class MultidimensionOptimization(OnedimensionOptimization):
             return self.damped_newton(self.epsilonx , maxStep)
         elif method == MethodType.conjugateDirection:
             return self.conjugate_direction(self.epsilonx , maxStep)
+        elif method == MethodType.powell:
+            return self.powell_method(self.epsilonx , maxStep)
 
 
 if __name__ == "__main__":
@@ -445,5 +487,16 @@ if __name__ == "__main__":
     q.oneDimensionProblemMethod = MethodType.quadraticInterpolation
     print(q.function)
     res = q.solve(method=MethodType.conjugateDirection)
-    print(res[0])
-    print(res[1])
+
+# powell
+    q = MultidimensionOptimization(
+        "11*x1^2 + 11*x2^2 + 18*x1*x2 - 100*x1 - 100*x2 + 250",
+        [0 , 0],
+        0.01,
+        0.01,
+        0.01
+    )
+    print(q.function.evaluate([[4.5455],[0.8264]])["Decimal"])
+    print("=====")
+    print(q.solve(method=MethodType.powell))
+    print(q.res[0])
