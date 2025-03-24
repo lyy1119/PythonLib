@@ -300,7 +300,35 @@ class MultidimensionOptimization(OnedimensionOptimization):
         return self.res
 
     def conjugate_direction(self , epsilon , maxStep):
-        pass
+        # 适用范围有限
+        # 构造ss
+        step = 0
+        from collections import deque
+        ss = deque()
+        for i in range(self.function.dimension):
+            s = [[0] for i in range(self.function.dimension)]
+            s[i] = [1]
+            s = MathFunction.DecimalMatrix(s)
+            ss.append(deque)
+        # ss存储每一轮搜索中各步所用的方向向量
+        for i in range(self.function.dimension):
+            # 一共进行n轮，n为维数
+            x0 = self.x0
+            for s in ss:
+                self.set_s(s)
+                _ , _ , x = super().solve(maxStep)
+                self.set_x0_from_decimal_matrix(x)
+                step += 1
+            # xn 就是 x
+            s = x - x0
+            ss.popleft()
+            ss.append(s)
+            self.set_s(s)
+            _ , f , x = super().solve(maxStep)
+            self.set_x0_from_decimal_matrix(x)
+            step = step + 1
+        self.res = [x , f]
+        return self.res
 
     def solve(self , method=MethodType.coordinateDescent , maxStep=1000):
         if method == MethodType.coordinateDescent:
