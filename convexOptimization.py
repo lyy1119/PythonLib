@@ -184,6 +184,9 @@ class OnedimensionOptimization(Problem):
         self.searchInterval = determine_search_interval(self.function , self.x0 , self.t0 , self.s)
 
     def solve(self , method=MethodType.goldenSection , maxSteps=1000):
+        '''
+        返回 [a , x , f]
+        '''
         if method == MethodType.goldenSection:
             return self.golden_section(maxSteps)
         elif method == MethodType.quadraticInterpolation:
@@ -333,6 +336,32 @@ class MultidimensionOptimization(OnedimensionOptimization):
             print(s)
         self.res = [x , f]
         return self.res
+
+    def powell_method(self , epsilon , maxStep):
+        from collections import deque
+        ss = []
+        for i in range(self.function.dimension):
+            s = [[0] for i in range(self.function.dimension)]
+            s[i] = [1]
+            s = MathFunction.DecimalMatrix(s)
+            ss.append(s)
+        k = 0
+        while True:
+            k = k + 1
+            fList = []
+            for s in ss:
+                self.set_s(s)
+                a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+                self.set_x0_from_decimal_matrix(x)
+                fList.append(f)
+            deltaM = Decimal(0)
+            m = -1
+            for i in range(self.function.dimension - 1):
+                temp = fList[i] - fList[i+1]
+                if temp > deltaM:
+                    deltaM = temp
+                    m = i
+            
 
     def solve(self , method=MethodType.coordinateDescent , maxStep=1000):
         if method == MethodType.coordinateDescent:
