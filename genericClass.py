@@ -98,6 +98,8 @@ class Matrix:
                 return type(self)(newData)
             else:
                 raise ValueError(f"相加两矩阵的行列数目不对应，前者row={self.row},col={self.col} , 后者row={other.row},col={self.col}")
+        def __sub__(self , other):
+            return self + (-other)
 
 class Fraction:
     def __init__(self , numerator , denominator):

@@ -3,7 +3,6 @@ from decimal import Decimal
 from enum import Enum
 from collections import deque
 from copy import deepcopy
-from math import inf
 
 def evaluate(function , queue , x0: MathFunction.DecimalMatrix):
     '''
@@ -26,6 +25,7 @@ class MethodType(Enum):
     coordinateDescent = 3
     gradientDescent = 4
     dampedNewton = 5
+    conjugateDirection = 6
 
 class Problem:
     def __init__(self , function: str , x0: list , t0: float):
@@ -306,17 +306,17 @@ class MultidimensionOptimization(OnedimensionOptimization):
         from collections import deque
         ss = deque()
         for i in range(self.function.dimension):
-            s = [[0] for i in range(self.function.dimension)]
+            s = [[0] for _ in range(self.function.dimension)]
             s[i] = [1]
             s = MathFunction.DecimalMatrix(s)
-            ss.append(deque)
+            ss.append(s)
         # ss存储每一轮搜索中各步所用的方向向量
         for i in range(self.function.dimension):
             # 一共进行n轮，n为维数
             x0 = self.x0
             for s in ss:
                 self.set_s(s)
-                _ , _ , x = super().solve(maxStep)
+                _a , x , _f = super().solve(method=self.oneDimensionProblemMethod , maxSteps=maxStep)
                 self.set_x0_from_decimal_matrix(x)
                 step += 1
             # xn 就是 x
@@ -324,9 +324,13 @@ class MultidimensionOptimization(OnedimensionOptimization):
             ss.popleft()
             ss.append(s)
             self.set_s(s)
-            _ , f , x = super().solve(maxStep)
+            _a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
             self.set_x0_from_decimal_matrix(x)
             step = step + 1
+            print("a=")
+            print(_a)
+            print("s=")
+            print(s)
         self.res = [x , f]
         return self.res
 
@@ -337,6 +341,8 @@ class MultidimensionOptimization(OnedimensionOptimization):
             return self.gradient_descent(self.epsilonx , maxStep)
         elif method == MethodType.dampedNewton:
             return self.damped_newton(self.epsilonx , maxStep)
+        elif method == MethodType.conjugateDirection:
+            return self.conjugate_direction(self.epsilonx , maxStep)
 
 
 if __name__ == "__main__":
@@ -397,3 +403,18 @@ if __name__ == "__main__":
         0.01
     )
     print(q.solve(method=MethodType.dampedNewton)[0])
+
+# 共轭方向法
+    print()
+    q = MultidimensionOptimization(
+        "2*x1^2 + 2*x1*x2 + 2*x2^2",
+        [10 , 10],
+        0.01,
+        0.01,
+        0.01
+    )
+    q.oneDimensionProblemMethod = MethodType.quadraticInterpolation
+    print(q.function)
+    res = q.solve(method=MethodType.conjugateDirection)
+    print(res[0])
+    print(res[1])
