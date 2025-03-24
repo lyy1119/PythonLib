@@ -394,6 +394,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 break
         self.res = [x , fMin , k , step]
         return self.res
+    
+    def bfgs(self):
+        pass
 
     def solve(self , method=MethodType.coordinateDescent , maxStep=1000):
         if method == MethodType.coordinateDescent:
@@ -412,11 +415,12 @@ if __name__ == "__main__":
     print("==========")
     print("这是无约束优化的测试程序.")
     # 寻找区间测试
+    print("寻找搜索区间测试")
     function = MathFunction(polynomial="3*x1^3 - 8*x1 + 9")
     print(determine_search_interval(function , MathFunction.DecimalMatrix([[1.8]]) , 0.1 , MathFunction.DecimalMatrix([[1]])))
 
 # 黄金分割测试
-    print("")
+    print("黄金分割法测试")
     q = OnedimensionOptimization(
         "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
         [2 , 2],
@@ -429,11 +433,12 @@ if __name__ == "__main__":
     print(q.solve(MethodType.goldenSection , 50))
 
 # 二次插值测试 
-    print()
+    print("二次插值测试")
     q.searchInterval = [Decimal(-3) , Decimal(5)]
     print(q.solve(MethodType.quadraticInterpolation , 50))
 
 # 坐标轮换测试
+    print("坐标轮换法测试.")
     q = MultidimensionOptimization(
         "4 + 4.5*x1 - 4*x2 + x1^2 + 2*x2^2 - 2*x1*x2 + x1^4 - 2*x1^2*x2",
         [0 , 0],
@@ -457,9 +462,10 @@ if __name__ == "__main__":
         0.01
     )
     print(q.solve(method=MethodType.gradientDescent)[1])
+    print(q.res)
 
 # 阻尼牛顿法
-    print()
+    print("阻尼牛顿法测试.")
     q = MultidimensionOptimization(
         "x1^2 - x1*x2 + x2^2 + 2*x1 - 4*x2",
         [2 , 2],
@@ -470,7 +476,7 @@ if __name__ == "__main__":
     print(q.solve(method=MethodType.dampedNewton)[0])
 
 # 共轭方向法
-    print()
+    print("共轭方向法测试")
     q = MultidimensionOptimization(
         "2*x1^2 + 2*x1*x2 + 2*x2^2",
         [10 , 10],
@@ -480,8 +486,11 @@ if __name__ == "__main__":
     )
     q.oneDimensionProblemMethod = MethodType.quadraticInterpolation
     res = q.solve(method=MethodType.conjugateDirection)
+    print(res)
+    print(res[0])
 
 # powell
+    print("powell法测试")
     q = MultidimensionOptimization(
         "11*x1^2 + 11*x2^2 + 18*x1*x2 - 100*x1 - 100*x2 + 250",
         [0 , 0],
@@ -489,6 +498,5 @@ if __name__ == "__main__":
         0.001,
         0.001
     )
-    print("=====")
     print(q.solve(method=MethodType.powell))
     print(q.res[0])
