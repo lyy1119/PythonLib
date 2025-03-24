@@ -148,13 +148,13 @@ class OnedimensionOptimization(Problem):
         '''
         if self.searchInterval[0] == None:
             self.get_search_interval()
-        q = Decimal("0.618")
         a = self.searchInterval[0]
         b = self.searchInterval[1]
                         #  A    A1  A2  B
         que = deque([[a , self.s , None , None] , None , None , [b , self.s , None , None]])   # [[] , [] , [] , []]
         while True:
             j = 0
+            self.calculate_golden_point(que)
             while True:
                 j += 1
                 # 计算各点,及其函数值
@@ -174,6 +174,11 @@ class OnedimensionOptimization(Problem):
                     break
             if abs((que[2][0] - que[1][0])/que[1][0]) < self.epsilonx:
                 break
+            else:
+                que[0] = deepcopy(que[1])
+                que[1] = None
+                que[3] = deepcopy(que[2])
+                que[2] == None
         if que[1][3] > que[2][3]:
             res = [que[2][0] , que[2][2] , que[2][3]]
         else:
@@ -185,6 +190,7 @@ class OnedimensionOptimization(Problem):
         self.searchInterval = determine_search_interval(self.function , self.x0 , self.t0 , self.s)
 
     def solve(self , method=MethodType.goldenSection , maxSteps=1000):
+        self.get_search_interval()
         '''
         返回 [a , x , f]
         '''
@@ -337,7 +343,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
     def powell_method(self , epsilon , maxStep):
         ss = []
         for i in range(self.function.dimension):
-            s = [[0] for i in range(self.function.dimension)]
+            s = [[0] for _ in range(self.function.dimension)]
             s[i] = [1]
             s = MathFunction.DecimalMatrix(s)
             ss.append(s)
@@ -348,14 +354,10 @@ class MultidimensionOptimization(OnedimensionOptimization):
             # 本轮的起始点x0
             x0 = self.x0
             fList = [self.function.evaluate(x0)["Decimal"]]
-            print(fList[0])
             for _s in ss:
                 self.set_s(_s)
                 a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
                 fMin = f
-                print(f)
-                print(x)
-                print(f"a={a}")
                 self.set_x0_from_decimal_matrix(x)
                 fList.append(f)
                 step = step + 1
@@ -371,13 +373,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
             m = 0
             for i in range(1 , self.function.dimension + 1):
                 temp = fList[i-1] - fList[i]
-                print(f"temp={temp}")
                 if temp > deltaM:
                     deltaM = temp
                     m = i-1
-            print(m)
-            print(deltaM)
-            input()
             if f3 < f1 and (f1 - 2*f2 + f3)*(f1-f2-deltaM)**2 < Decimal("0.5")*deltaM*(f1-f3)**2:
                 self.set_s(s)
                 a , x , fMin = super().solve(self.oneDimensionProblemMethod , maxStep)
@@ -394,10 +392,8 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 fMin = f3
             # 计算Dx，即相邻迭代点之间的长度
             dx = (x0 - x).frobenius_norm()
-            print(f"{k}.\n x0=\n{x0} , x=\n{x}")
             # 计算df
             df = abs((f1-f2)/f1)
-            print(f"{k} . dx = {dx} , df = {df} , fmin={fMin}")
             if dx < self.epsilonx or df < self.epsilonf:
                 break
         self.res = [x , fMin , k , step]
@@ -443,7 +439,7 @@ if __name__ == "__main__":
     q = MultidimensionOptimization(
         "4 + 4.5*x1 - 4*x2 + x1^2 + 2*x2^2 - 2*x1*x2 + x1^4 - 2*x1^2*x2",
         [0 , 0],
-        0.01,
+        0.0001,
         0.01,
         0.01
     )
@@ -485,18 +481,16 @@ if __name__ == "__main__":
         0.01
     )
     q.oneDimensionProblemMethod = MethodType.quadraticInterpolation
-    print(q.function)
     res = q.solve(method=MethodType.conjugateDirection)
 
 # powell
     q = MultidimensionOptimization(
         "11*x1^2 + 11*x2^2 + 18*x1*x2 - 100*x1 - 100*x2 + 250",
         [0 , 0],
-        0.01,
-        0.01,
-        0.01
+        0.00000001,
+        0.001,
+        0.001
     )
-    print(q.function.evaluate([[4.5455],[0.8264]])["Decimal"])
     print("=====")
     print(q.solve(method=MethodType.powell))
     print(q.res[0])
