@@ -85,8 +85,6 @@ class OnedimensionOptimization(Problem):
         evaluate(self.function , queue , self.x0)
     
     def quadratic_interpolation(self):
-        if self.searchInterval[0] == None:
-            self.get_search_interval()
         # 计算初始点
         a1 = self.searchInterval[0]
         a3 = self.searchInterval[1]
@@ -146,8 +144,6 @@ class OnedimensionOptimization(Problem):
         '''
         jMax: 满足函数值间隔的最大迭代次数
         '''
-        if self.searchInterval[0] == None:
-            self.get_search_interval()
         a = self.searchInterval[0]
         b = self.searchInterval[1]
                         #  A    A1  A2  B
@@ -413,12 +409,14 @@ class MultidimensionOptimization(OnedimensionOptimization):
 
 
 if __name__ == "__main__":
+    print("==========")
+    print("这是无约束优化的测试程序.")
     # 寻找区间测试
     function = MathFunction(polynomial="3*x1^3 - 8*x1 + 9")
     print(determine_search_interval(function , MathFunction.DecimalMatrix([[1.8]]) , 0.1 , MathFunction.DecimalMatrix([[1]])))
 
 # 黄金分割测试
-    print()
+    print("")
     q = OnedimensionOptimization(
         "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
         [2 , 2],
