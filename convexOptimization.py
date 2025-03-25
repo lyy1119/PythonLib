@@ -135,9 +135,8 @@ class OnedimensionOptimization(Problem):
                 if quadraticPoint[i-1][3] > quadraticPoint[i][3] and quadraticPoint[i+1][3] > quadraticPoint[i][3]:
                     # 找到高低高
                     quadraticPoint = quadraticPoint[i-1:i+2]
-            ef = abs(f2)
             ef1 = abs(f2 - fp)
-            if ef1/ef < self.epsilonf:
+            if ef1 < self.epsilonf:
                 break
         self.res = [quadraticPoint[1][0] , quadraticPoint[1][2] , quadraticPoint[1][3]]
         return self.res
@@ -168,9 +167,9 @@ class OnedimensionOptimization(Problem):
                     que[2] = deepcopy(que[1])
                     que[1] = None
                 self.calculate_golden_point(que)
-                if j > jMax or abs((que[2][3] - que[1][3])/que[1][3]) <= self.epsilonf:
+                if j > jMax or abs((que[2][3] - que[1][3])) <= self.epsilonf:
                     break
-            if abs((que[2][0] - que[1][0])/que[1][0]) < self.epsilonx:
+            if abs((que[2][0] - que[1][0])) < self.epsilonx:
                 break
             else:
                 que[0] = deepcopy(que[1])
@@ -236,7 +235,6 @@ def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalM
 
     res = list(queue)[0:3:2]
     res.sort()
-    print([i[0] for i in res])
     return [i[0] for i in res]
 
 
@@ -438,7 +436,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             f0 = f
             a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
             self.set_x0_from_decimal_matrix(x)
-            if abs(a) < self.epsilonx and abs((f-f0)/f0) < self.epsilonf:
+            if abs(a) < self.epsilonx and abs((f-f0)) < self.epsilonf:
                 break
         self.res = [x , f , step]
         return self.res
@@ -554,7 +552,7 @@ if __name__ == "__main__":
 # dfp
     print("dfp法测试")
     q = MultidimensionOptimization(
-        "4*x1^2 + x2^2 - 40*x1 - 12*x2 + 137",
+        "4*x1^2 + x2^2 - 40*x1 - 12*x2 + 136",
         [8 , 9],
         0.01,
         0.001,
