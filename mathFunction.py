@@ -274,7 +274,7 @@ class MathFunction:
                         break
                     monomialRes = monomialRes * (x[index]**power)
             res = res + monomialRes
-        return {"str" : str(res) , "float" : float(res) , "Decimal" : res }
+        return res
 
     def gradient_matrix(self):
         '''
@@ -312,7 +312,7 @@ class MathFunction:
         self.gradient = GenericMatrix(matrix)
         return self.gradient
 
-    def evaluate_gradient(self , x: list , format="float"):
+    def evaluate_gradient(self , x: list):
         '''
         formate: 输出格式。str、decimal、float
         返回结果形式： 列向量
@@ -326,7 +326,7 @@ class MathFunction:
         gradient = deepcopy(self.gradient)
         gradient.transpose()
         for i in gradient.data[0]: # 梯度的转置为行向量，行数为1
-            res.append(i.evaluate(x)[format])
+            res.append(i.evaluate(x))
         matrix = [[i] for i in res]
         return MathFunction.DecimalMatrix(matrix)
 
@@ -353,7 +353,7 @@ class MathFunction:
         '''
         if not self.hessianMatrix:
             self.hessian_matrix()
-        res = [[self.hessianMatrix.data[i][j].evaluate(x)["Decimal"] for j in range(self.dimension)] for i in range(self.dimension)]
+        res = [[self.hessianMatrix.data[i][j].evaluate(x) for j in range(self.dimension)] for i in range(self.dimension)]
         return MathFunction.DecimalMatrix(res)
 
 if __name__ == "__main__":
@@ -387,7 +387,7 @@ if __name__ == "__main__":
     value = function.evaluate(x)
     print(r'print(value["str"])')
     print("[Out]: " , end='')
-    print(value["str"])
+    print(value)
     print("测试成功!")
 
     print()
