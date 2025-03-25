@@ -16,6 +16,7 @@ x1^2 - 8 + 5*x2^7*x1^2 + x1^(-5) + x5
 '''
 from decimal import Decimal
 from genericClass import Matrix as GenericMatrix
+from genericClass import transpose
 
 class MathFunction:
     class DecimalMatrix(GenericMatrix):

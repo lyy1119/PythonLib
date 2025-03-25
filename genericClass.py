@@ -43,8 +43,8 @@ class Matrix:
 
         def transpose(self):
             self.data = [[self.data[i][j] for i in range(self.row)] for j in range(self.col)]
+            self.col , self.row = self.row , self.col
             return self
-
 
         def __str__(self):
             res = ''
@@ -133,3 +133,9 @@ class Fraction:
 
     def __neg__(self):
         return -1*self
+
+def transpose(matrix: Matrix):
+    from copy import deepcopy
+    res = deepcopy(matrix)
+    res.transpose()
+    return res
