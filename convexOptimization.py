@@ -209,15 +209,20 @@ def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalM
     step = Decimal(t0) #步长
     from collections import deque
     queue = deque()
-    queue.append([0 , s , None , None])
+    queue.append([Decimal(0) , s , None , None])
     queue.append([step , s , None , None])
 
-    evaluate(function , queue , x0)
-    if queue[1][3] > queue[0][3]: # F2 < F1
-        step = -step/2 # 步长反向并缩小
-        queue.pop() # 将原A2从末尾出队
-    else:
-        step = step * 2
+    while True:
+        evaluate(function , queue , x0)
+        if queue[1][3] >= queue[0][3]: # F2 > F1
+            step = -step/Decimal(2) # 步长反向并缩小
+            queue.pop() # 将原A2从末尾出队
+            nextPoint = [queue[0][0]+step , s , None , None]
+            queue.append(nextPoint)
+        else:
+            step = step * 2
+            break
+
 
     while True: # 进退法
         nextPoint = [queue[-1][0]+step , s , None , None]
@@ -231,6 +236,7 @@ def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalM
 
     res = list(queue)[0:3:2]
     res.sort()
+    print([i[0] for i in res])
     return [i[0] for i in res]
 
 
@@ -548,11 +554,12 @@ if __name__ == "__main__":
 # dfp
     print("dfp法测试")
     q = MultidimensionOptimization(
-        "4*x1^2 + x2^2 - 40*x1 - 12*x2 + 136",
+        "4*x1^2 + x2^2 - 40*x1 - 12*x2 + 137",
         [8 , 9],
-        0.000000001,
+        0.01,
         0.001,
         0.001
     )
+    # q.oneDimensionProblemMethod=MethodType.quadraticInterpolation
     print(q.solve(method=MethodType.dfp))
     print(q.res[0])
