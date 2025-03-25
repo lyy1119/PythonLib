@@ -4,6 +4,10 @@ from decimal import Decimal
 from enum import Enum
 from collections import deque
 from copy import deepcopy
+from decimal import Decimal, getcontext
+
+print(getcontext().prec)  # 默认输出 28
+getcontext().prec = 50  # 设置更高的精度
 
 def evaluate(function , queue , x0: MathFunction.DecimalMatrix):
     '''
@@ -39,7 +43,7 @@ class Problem:
         '''
         self.function = MathFunction(function)
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0]) # 转化为列向量
-        self.t0 = Decimal(t0)
+        self.t0 = Decimal(1)
 
     def set_x0_from_list(self , x0):
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0])
@@ -213,7 +217,7 @@ def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalM
 
     while True:
         evaluate(function , queue , x0)
-        if queue[1][3] >= queue[0][3]: # F2 > F1
+        if queue[1][3] > queue[0][3]: # F2 > F1
             step = -step/Decimal(2) # 步长反向并缩小
             queue.pop() # 将原A2从末尾出队
             nextPoint = [queue[0][0]+step , s , None , None]
@@ -230,7 +234,7 @@ def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalM
         queue.append(nextPoint)
         evaluate(function , queue , x0)
         step = step * 2
-        if len(queue) == 3 and (queue[0][3] > queue[1][3] and queue[2][3] > queue[1][3]):
+        if len(queue) == 3 and (queue[0][3] >= queue[1][3] and queue[2][3] >= queue[1][3]):
             break
 
     res = list(queue)[0:3:2]
@@ -494,12 +498,8 @@ if __name__ == "__main__":
         0.01,
         0.01
     )
-    try:
-        res = q.solve()
-        for i in res:
-            print(i)
-    except ValueError as e:
-        print(e)
+    res = q.solve()
+    print(res)
 
 
     q = MultidimensionOptimization(
@@ -555,8 +555,8 @@ if __name__ == "__main__":
         "4*x1^2 + x2^2 - 40*x1 - 12*x2 + 136",
         [8 , 9],
         0.01,
-        0.001,
-        0.001
+        0.01,
+        0.01
     )
     # q.oneDimensionProblemMethod=MethodType.quadraticInterpolation
     print(q.solve(method=MethodType.dfp))
