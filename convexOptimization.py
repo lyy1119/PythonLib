@@ -24,25 +24,23 @@ class MethodType(Enum):
     bfgs = 9
 
 class Problem:
-    def __init__(self , function: str , x0: list , t0: float):
+    def __init__(self , function: str , x0: list):
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
-        t0 = 1 
         '''
         self.function = MathFunction(function)
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0]) # 转化为列向量
-        self.t0 = Decimal(1)
 
     def set_x0_from_list(self , x0):
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0])
-    
+
     def set_x0_from_decimal_matrix(self , x0: MathFunction.DecimalMatrix):
         self.x0 = x0
 
 class OnedimensionOptimization(Problem):
 
-    def __init__(self, function, x0, t0 , s: list , epsilonx: float , epsilonf: float):
+    def __init__(self, function, x0, s: list , epsilonx: float , epsilonf: float):
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
@@ -51,7 +49,7 @@ class OnedimensionOptimization(Problem):
         epsilonf 必须传入
         epsilonx 必须传入
         '''
-        super().__init__(function, x0, t0)
+        super().__init__(function, x0)
 
         self.s = MathFunction.DecimalMatrix([[i] for i in s])
         self.searchInterval = [None , None] # 应该为decimal
@@ -139,7 +137,6 @@ class OnedimensionOptimization(Problem):
                     self.evaluate_point(quadraticPoint)
                     fp = quadraticPoint[i][2]
                     break
-            
             # 弹出
             for i in range(1,3):
                 if quadraticPoint[i-1][2] > quadraticPoint[i][2] and quadraticPoint[i+1][2] > quadraticPoint[i][2]:
@@ -248,9 +245,9 @@ class OnedimensionOptimization(Problem):
 
 
 class MultidimensionOptimization(OnedimensionOptimization):
-    def __init__(self, function, x0, t0, epsilonx, epsilonf):
-        s = [0] # 放报错用
-        super().__init__(function, x0, t0, s, epsilonx, epsilonf)
+    def __init__(self, function, x0, epsilonx, epsilonf):
+        s = [1 , 1] # 防报错用
+        super().__init__(function, x0, s, epsilonx, epsilonf)
         self.oneDimensionProblemMethod = MethodType.goldenSection
 
     def coordinate_descent(self , epsilon=0 , maxStep=1000):
@@ -486,7 +483,6 @@ if __name__ == "__main__":
     q = OnedimensionOptimization(
         "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
         [2 , 2],
-        0.1,
         [0.707 , 0.707],
         0.1,
         0.15,
@@ -504,7 +500,6 @@ if __name__ == "__main__":
     q = MultidimensionOptimization(
         "4 + 4.5*x1 - 4*x2 + x1^2 + 2*x2^2 - 2*x1*x2 + x1^4 - 2*x1^2*x2",
         [0 , 0],
-        0.0001,
         0.01,
         0.01
     )
@@ -515,7 +510,6 @@ if __name__ == "__main__":
     q = MultidimensionOptimization(
         "x1^2 + 2*x2^2",
         [0 , 0],
-        0.01,
         0.01,
         0.01
     )
@@ -528,7 +522,6 @@ if __name__ == "__main__":
         "x1^2 - x1*x2 + x2^2 + 2*x1 - 4*x2",
         [2 , 2],
         0.01,
-        0.01,
         0.01
     )
     print(q.solve(method=MethodType.dampedNewton)[0])
@@ -538,7 +531,6 @@ if __name__ == "__main__":
     q = MultidimensionOptimization(
         "2*x1^2 + 2*x1*x2 + 2*x2^2",
         [10 , 10],
-        0.01,
         0.01,
         0.01
     )
@@ -552,7 +544,6 @@ if __name__ == "__main__":
     q = MultidimensionOptimization(
         "11*x1^2 + 11*x2^2 + 18*x1*x2 - 100*x1 - 100*x2 + 250",
         [0 , 0],
-        0.00000001,
         0.001,
         0.001
     )
@@ -564,7 +555,6 @@ if __name__ == "__main__":
     q = MultidimensionOptimization(
         "4*x1^2 + x2^2 - 40*x1 - 12*x2 + 136",
         [8 , 9],
-        0.01,
         0.01,
         0.01
     )
