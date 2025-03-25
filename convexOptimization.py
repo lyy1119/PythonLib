@@ -24,6 +24,11 @@ class MethodType(Enum):
     bfgs = 9
 
 class Problem:
+    class Result:
+        def __init__(self , item: dict):
+            pass
+        def __str__(self):
+            pass
     def __init__(self , function: str , x0: list):
         '''
         function = x1^1 + 3*x2^2 + ...
