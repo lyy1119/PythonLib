@@ -20,7 +20,7 @@ def evaluate(function , queue , x0: MathFunction.DecimalMatrix):
         if i[2] == None:
             i[2] = x0 + i[0]*i[1] # 计算X=X0+AS
         if i[3] == None:
-            i[3] = function.evaluate(i[2])["Decimal"] # 计算F(X)
+            i[3] = function.evaluate(i[2]) # 计算F(X)
 
 class MethodType(Enum):
     # 一维优化
@@ -274,9 +274,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
     def gradient_descent(self , epsilon , maxStep=1000):
         step = 0
         x = self.x0
-        f = self.function.evaluate(x)["Decimal"]
+        f = self.function.evaluate(x)
         while True:
-            g = self.function.evaluate_gradient(x , format="Decimal")
+            g = self.function.evaluate_gradient(x)
             gNorm = g.frobenius_norm()
             if gNorm == 0:
                 # 对于凸优化，gnorm为0时，即最优点（凸函数的hessian矩阵处处正定）
@@ -297,10 +297,10 @@ class MultidimensionOptimization(OnedimensionOptimization):
     def damped_newton(self , epsilon , maxStep=1000):
         step = 0
         x = self.x0
-        f = self.function.evaluate(x)["Decimal"]
+        f = self.function.evaluate(x)
         while True:
             h = self.function.evaluate_hessian_matrix(x)
-            g = self.function.evaluate_gradient(x , "Decimal")
+            g = self.function.evaluate_gradient(x)
             h.inverse()
             s = - h*g
             self.set_s(s)
@@ -360,7 +360,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             k = k + 1
             # 本轮的起始点x0
             x0 = self.x0
-            fList = [self.function.evaluate(x0)["Decimal"]]
+            fList = [self.function.evaluate(x0)]
             for _s in ss:
                 self.set_s(_s)
                 a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
@@ -370,11 +370,11 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 step = step + 1
             s = x - x0
             x3 = 2*x - x0
-            f1 = self.function.evaluate(x0)["Decimal"]
-            # f2 = self.function.evaluate(x)["Decimal"]
+            f1 = self.function.evaluate(x0)
+            # f2 = self.function.evaluate(x)
             # 此时x就是f对应的点
             f2 = fMin
-            f3 = self.function.evaluate(x3)["Decimal"]
+            f3 = self.function.evaluate(x3)
             # 计算delta_m
             deltaM = fList[0] - fList[1]
             m = 0
