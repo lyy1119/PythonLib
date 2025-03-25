@@ -395,6 +395,11 @@ class MultidimensionOptimization(OnedimensionOptimization):
         self.res = [x , fMin , k , step]
         return self.res
     
+    def dfp(self):
+        x0 = self.x0
+        # 第一步使用负梯度方向搜索
+        pass
+
     def bfgs(self):
         pass
 
