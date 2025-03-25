@@ -9,18 +9,6 @@ from decimal import Decimal, getcontext
 print(getcontext().prec)  # 默认输出 28
 getcontext().prec = 50  # 设置更高的精度
 
-def evaluate(function , queue , x0: MathFunction.DecimalMatrix):
-    '''
-    更新队列中的信息
-    传入一个可迭代对象，collections.deque最佳
-    x0: 初始点
-    queue结构： [[A , S , X , F(X)]]  初始化时令X、F(X)=None
-    '''
-    for i in queue:
-        if i[2] == None:
-            i[2] = x0 + i[0]*i[1] # 计算X=X0+AS
-        if i[3] == None:
-            i[3] = function.evaluate(i[2]) # 计算F(X)
 
 class MethodType(Enum):
     # 一维优化
@@ -40,7 +28,7 @@ class Problem:
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
-        t0 = 0.1 
+        t0 = 1 
         '''
         self.function = MathFunction(function)
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0]) # 转化为列向量
@@ -80,16 +68,33 @@ class OnedimensionOptimization(Problem):
         else:
             self.s = MathFunction.DecimalMatrix([[i] for i in s])
 
+    def evaluate_function(self , x: MathFunction.DecimalMatrix):
+        return self.function.evaluate(x)
+
+    def evaluate_point(self , queue) -> None:
+        '''
+        更新队列中的信息
+        传入一个可迭代对象，collections.deque最佳
+        x0: 初始点
+        queue结构： [[A , X , F(X)]]  初始化时令X、F(X)=None
+        直接修改整个list
+        无返回值
+        '''
+        for i in queue:
+            if i[1] == None:
+                i[1] = self.x0 + i[0]*self.s # 计算X=X0+AS
+            if i[2] == None:
+                i[2] = self.evaluate_function(i[1]) # 计算F(X)
+
     def calculate_golden_point(self , queue: deque):
         a = queue[0][0]
         b = queue[3][0]
-        s = queue[0][1]
         q = Decimal("0.618")
         if queue[1] == None: # 点没有被计算
-            queue[1] = [b - q*(b-a) , s , None , None]
+            queue[1] = [b - q*(b-a) , None , None]
         if queue[2] == None:
-            queue[2] = [a + q*(b-a) , s , None , None]
-        evaluate(self.function , queue , self.x0)
+            queue[2] = [a + q*(b-a) , None , None]
+        self.evaluate_point(queue)
     
     def quadratic_interpolation(self):
         # 计算初始点
@@ -97,53 +102,53 @@ class OnedimensionOptimization(Problem):
         a3 = self.searchInterval[1]
         a2 = (a1+a3)/2
         quadraticPoint = [
-            [a1 , self.s , None , None], 
-            [a2 , self.s , None , None],
-            [a3 , self.s , None , None]
+            [a1 , None , None], 
+            [a2 , None , None],
+            [a3 , None , None]
         ]
         def cal_k1(points: list):
-            f3 = points[2][3]
-            f1 = points[0][3]
+            f3 = points[2][2]
+            f1 = points[0][2]
             a3 = points[2][0]
             a1 = points[0][0]
             return (f3-f1)/(a3-a1)
         def cal_k2(points: list , k1):
-            f2 = points[1][3]
-            f1 = points[0][3]
+            f2 = points[1][2]
+            f1 = points[0][2]
             a2 = points[1][0]
             a1 = points[0][0]
             a3 = points[2][0]
             return ((f2-f1)/(a2-a1)-k1)/(a2-a3)
-        evaluate(self.function , quadraticPoint , self.x0)
+        self.evaluate_point(quadraticPoint)
         while True:
             k1 = cal_k1(quadraticPoint)
             k2 = cal_k2(quadraticPoint , k1)
             if k2 == 0:
                 break
             def cal_ap(points , k1 , k2) -> list:
-                return [Decimal("0.5")*(points[0][0] + points[2][0]-k1/k2) , self.s , None , None]
+                return [Decimal("0.5")*(points[0][0] + points[2][0]-k1/k2) , None , None]
             ap = cal_ap(quadraticPoint , k1 , k2)
             if (ap[0] - quadraticPoint[0][0])*(quadraticPoint[2][0] - ap[0]) < 0:
                 break
-            f2 = quadraticPoint[1][3]
+            f2 = quadraticPoint[1][2]
             fp = Decimal(0)
             # 插入ap
             for i in range(3):
                 if quadraticPoint[i][0] > ap[0]:
                     quadraticPoint.insert(i , ap)
-                    evaluate(self.function , quadraticPoint , self.x0)
-                    fp = quadraticPoint[i][3]
+                    self.evaluate_point(quadraticPoint)
+                    fp = quadraticPoint[i][2]
                     break
             
             # 弹出
             for i in range(1,3):
-                if quadraticPoint[i-1][3] > quadraticPoint[i][3] and quadraticPoint[i+1][3] > quadraticPoint[i][3]:
+                if quadraticPoint[i-1][2] > quadraticPoint[i][2] and quadraticPoint[i+1][2] > quadraticPoint[i][2]:
                     # 找到高低高
                     quadraticPoint = quadraticPoint[i-1:i+2]
             ef1 = abs(f2 - fp)
             if ef1 < self.epsilonf:
                 break
-        self.res = [quadraticPoint[1][0] , quadraticPoint[1][2] , quadraticPoint[1][3]]
+        self.res = quadraticPoint[1]
         return self.res
 
     def golden_section(self , jMax: int):
@@ -161,7 +166,7 @@ class OnedimensionOptimization(Problem):
                 j += 1
                 # 计算各点,及其函数值
                 self.calculate_golden_point(que)
-                if que[1][3] > que[2][3]: # F1>F2
+                if que[1][2] > que[2][2]: # F1>F2
                     # F1高，舍弃A
                     # A1 , A2 -> A , A1 , A2 =None
                     que[0] = deepcopy(que[1])
@@ -172,7 +177,7 @@ class OnedimensionOptimization(Problem):
                     que[2] = deepcopy(que[1])
                     que[1] = None
                 self.calculate_golden_point(que)
-                if j > jMax or abs((que[2][3] - que[1][3])) <= self.epsilonf:
+                if j > jMax or abs((que[2][2] - que[1][2])) <= self.epsilonf:
                     break
             if abs((que[2][0] - que[1][0])) < self.epsilonx:
                 break
@@ -181,15 +186,15 @@ class OnedimensionOptimization(Problem):
                 que[1] = None
                 que[3] = deepcopy(que[2])
                 que[2] == None
-        if que[1][3] > que[2][3]:
-            res = [que[2][0] , que[2][2] , que[2][3]]
+        if que[1][2] > que[2][2]:
+            res = que[2]
         else:
-            res = [que[1][0] , que[1][2] , que[1][3]]
+            res = que[1]
         self.res = res
         return self.res
 
     def get_search_interval(self):
-        self.searchInterval = determine_search_interval(self.function , self.x0 , self.t0 , self.s)
+        self.searchInterval = self.determine_search_interval()
 
     def solve(self , method=MethodType.goldenSection , maxSteps=1000):
         self.get_search_interval()
@@ -201,46 +206,45 @@ class OnedimensionOptimization(Problem):
         elif method == MethodType.quadraticInterpolation:
             return self.quadratic_interpolation()
 
-def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalMatrix , t0: float , s: MathFunction.DecimalMatrix):
-    '''
-    function: 函数
-    x0: 起点
-    t0: 初始步长
-    s: 搜索方向
-    return {"float" : [a , b] , "Decimal" : [a , b]}
-    '''
+    def determine_search_interval(self):
+        '''
+        function: 函数
+        x0: 起点
+        t0: 初始步长
+        s: 搜索方向
+        return {"float" : [a , b] , "Decimal" : [a , b]}
+        '''
+        step = Decimal(1) # 步长
+        from collections import deque
+        queue = deque()
+        queue.append([Decimal(0) , None , None])
+        queue.append([step , None , None])
 
-    step = Decimal(t0) #步长
-    from collections import deque
-    queue = deque()
-    queue.append([Decimal(0) , s , None , None])
-    queue.append([step , s , None , None])
+        while True:
+            self.evaluate_point(queue)
+            if queue[1][2] > queue[0][2]: # F2 > F1
+                step = -step/Decimal(2) # 步长反向并缩小
+                queue.pop() # 将原A2从末尾出队
+                nextPoint = [queue[0][0]+step , None , None]
+                queue.append(nextPoint)
+            else:
+                step = step * 2
+                break
 
-    while True:
-        evaluate(function , queue , x0)
-        if queue[1][3] > queue[0][3]: # F2 > F1
-            step = -step/Decimal(2) # 步长反向并缩小
-            queue.pop() # 将原A2从末尾出队
-            nextPoint = [queue[0][0]+step , s , None , None]
+
+        while True: # 进退法
+            nextPoint = [queue[-1][0]+step , None , None]
+            if len(queue) == 3:
+                queue.popleft()
             queue.append(nextPoint)
-        else:
+            self.evaluate_point(queue)
             step = step * 2
-            break
+            if len(queue) == 3 and (queue[0][2] >= queue[1][2] and queue[2][2] >= queue[1][2]):
+                break
 
-
-    while True: # 进退法
-        nextPoint = [queue[-1][0]+step , s , None , None]
-        if len(queue) == 3:
-            queue.popleft()
-        queue.append(nextPoint)
-        evaluate(function , queue , x0)
-        step = step * 2
-        if len(queue) == 3 and (queue[0][3] >= queue[1][3] and queue[2][3] >= queue[1][3]):
-            break
-
-    res = list(queue)[0:3:2]
-    res.sort()
-    return [i[0] for i in res]
+        res = list(queue)[0:3:2]
+        res.sort(key=lambda x: x[0])
+        return [i[0] for i in res]
 
 
 class MultidimensionOptimization(OnedimensionOptimization):
@@ -476,7 +480,6 @@ if __name__ == "__main__":
     # 寻找区间测试
     print("寻找搜索区间测试")
     function = MathFunction(polynomial="3*x1^3 - 8*x1 + 9")
-    print(determine_search_interval(function , MathFunction.DecimalMatrix([[1.8]]) , 0.1 , MathFunction.DecimalMatrix([[1]])))
 
 # 黄金分割测试
     print("黄金分割法测试")
