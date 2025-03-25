@@ -33,6 +33,7 @@ class MethodType(Enum):
     conjugateDirection = 6
     powell = 7
     dfp = 8
+    bfgs = 9
 
 class Problem:
     def __init__(self , function: str , x0: list , t0: float):
@@ -405,7 +406,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
         self.res = [x , fMin , k , step]
         return self.res
     
-    def dfp(self , maxStep: int):
+    def quasi_newton(self , maxStep: int , method=MethodType.dfp):
         x = self.x0
         # 第一步使用负梯度方向搜索,手动
         e = []
@@ -431,7 +432,11 @@ class MultidimensionOptimization(OnedimensionOptimization):
             deltaG = g - g0
             transposeDeltaX = transpose(deltaX)
             transposeDeltaG = transpose(deltaG)
-            e = (deltaX*transposeDeltaX)/((transposeDeltaX*deltaG).frobenius_norm()) - (inversH*deltaG*transposeDeltaG*inversH)/((transposeDeltaG*inversH*deltaG).frobenius_norm())
+            if method == MethodType.dfp:
+                e = (deltaX*transposeDeltaX)/((transposeDeltaX*deltaG).frobenius_norm()) - (inversH*deltaG*transposeDeltaG*inversH)/((transposeDeltaG*inversH*deltaG).frobenius_norm())
+            elif method == MethodType.bfgs:
+                tX = transpose(x)
+                e = (deltaX * transposeDeltaX + ((transposeDeltaG*inversH*deltaG).frobenius_norm()*deltaX*transposeDeltaX)/((transposeDeltaX*deltaG).frobenius_norm()) - inversH*deltaG*transposeDeltaX - deltaX*transposeDeltaG*inversH)/((tX*deltaG).frobenius_norm())
             inversH = inversH + e
             s = - inversH * g
             self.set_s(s)
@@ -460,7 +465,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
         elif method == MethodType.powell:
             return self.powell_method(self.epsilonx , maxStep)
         elif method == MethodType.dfp:
-            return self.dfp(maxStep)
+            return self.quasi_newton(maxStep , method=MethodType.dfp)
+        elif method == MethodType.bfgs:
+            return self.quasi_newton(maxStep , method=MethodType.bfgs)
 
 
 if __name__ == "__main__":
@@ -559,5 +566,5 @@ if __name__ == "__main__":
         0.01
     )
     # q.oneDimensionProblemMethod=MethodType.quadraticInterpolation
-    print(q.solve(method=MethodType.dfp))
+    print(q.solve(method=MethodType.bfgs))
     print(q.res[0])
