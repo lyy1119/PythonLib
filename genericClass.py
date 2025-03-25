@@ -47,11 +47,10 @@ class Matrix:
             return self
 
         def __str__(self):
-            res = ''
-            for row in self.data:
-                for i in row:
-                    res = res + f"{i}" + "\t"
-                res = res + "\n"
+            # 对齐
+            # 计算每列最大宽度
+            col_widths = [max(len(str(item)) for item in col) for col in zip(*self.data)]
+            res = '\n'.join(['| ' + ' '.join(f"{str(item):<{col_widths[i]}}" for i, item in enumerate(row)) + ' |' for row in self.data])
             return res
 
         def __mul__(self , other):
