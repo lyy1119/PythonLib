@@ -160,7 +160,7 @@ class OnedimensionOptimization(Problem):
         a = self.searchInterval[0]
         b = self.searchInterval[1]
                         #  A    A1  A2  B
-        que = deque([[a , self.s , None , None] , None , None , [b , self.s , None , None]])   # [[] , [] , [] , []]
+        que = deque([[a , None , None] , None , None , [b , None , None]])   # [[] , [] , [] , []]
         while True:
             j = 0
             self.calculate_golden_point(que)
