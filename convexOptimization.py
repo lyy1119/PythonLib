@@ -1,4 +1,5 @@
 from mathFunction import MathFunction
+from mathFunction import transpose
 from decimal import Decimal
 from enum import Enum
 from collections import deque
@@ -27,6 +28,7 @@ class MethodType(Enum):
     dampedNewton = 5
     conjugateDirection = 6
     powell = 7
+    dfp = 8
 
 class Problem:
     def __init__(self , function: str , x0: list , t0: float):
@@ -212,7 +214,7 @@ def determine_search_interval(function: MathFunction , x0: MathFunction.DecimalM
 
     evaluate(function , queue , x0)
     if queue[1][3] > queue[0][3]: # F2 < F1
-        step = -step # 步长反向
+        step = -step/2 # 步长反向并缩小
         queue.pop() # 将原A2从末尾出队
     else:
         step = step * 2
@@ -395,10 +397,45 @@ class MultidimensionOptimization(OnedimensionOptimization):
         self.res = [x , fMin , k , step]
         return self.res
     
-    def dfp(self):
-        x0 = self.x0
-        # 第一步使用负梯度方向搜索
-        pass
+    def dfp(self , maxStep: int):
+        x = self.x0
+        # 第一步使用负梯度方向搜索,手动
+        e = []
+        for i in range(self.function.dimension):
+            ei = [0 for _ in range(self.function.dimension)]
+            ei[i] = 1
+            e.append(ei)
+        # 单位矩阵
+        inversH = MathFunction.DecimalMatrix(e)
+        g = self.function.evaluate_gradient(x)
+        s = -inversH * g
+        self.set_s(s)
+        x0 = x
+        a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+        g0 = g
+        self.set_x0_from_decimal_matrix(x)
+        g = self.function.evaluate_gradient(x)
+        step = 0
+        while True:
+            step = step + 1
+            g = self.function.evaluate_gradient(x)
+            deltaX = x - x0
+            deltaG = g - g0
+            transposeDeltaX = transpose(deltaX)
+            transposeDeltaG = transpose(deltaG)
+            e = (deltaX*transposeDeltaX)/((transposeDeltaX*deltaG).frobenius_norm()) - (inversH*deltaG*transposeDeltaG*inversH)/((transposeDeltaG*inversH*deltaG).frobenius_norm())
+            inversH = inversH + e
+            s = - inversH * g
+            self.set_s(s)
+            x0 = x
+            g0 = g
+            f0 = f
+            a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+            self.set_x0_from_decimal_matrix(x)
+            if abs(a) < self.epsilonx and abs((f-f0)/f0) < self.epsilonf:
+                break
+        self.res = [x , f , step]
+        return self.res
 
     def bfgs(self):
         pass
@@ -414,6 +451,8 @@ class MultidimensionOptimization(OnedimensionOptimization):
             return self.conjugate_direction(self.epsilonx , maxStep)
         elif method == MethodType.powell:
             return self.powell_method(self.epsilonx , maxStep)
+        elif method == MethodType.dfp:
+            return self.dfp(maxStep)
 
 
 if __name__ == "__main__":
@@ -504,4 +543,16 @@ if __name__ == "__main__":
         0.001
     )
     print(q.solve(method=MethodType.powell))
+    print(q.res[0]) 
+
+# dfp
+    print("dfp法测试")
+    q = MultidimensionOptimization(
+        "4*x1^2 + x2^2 - 40*x1 - 12*x2 + 136",
+        [8 , 9],
+        0.000000001,
+        0.001,
+        0.001
+    )
+    print(q.solve(method=MethodType.dfp))
     print(q.res[0])
