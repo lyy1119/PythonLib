@@ -279,6 +279,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
     def gradient_descent(self):
         step = 0
         x = self.x0
+        f = Decimal(0)
         while True:
             step = step + 1
             g = self.function.evaluate_gradient(x)
@@ -298,7 +299,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
         self.res = [x , f]
         return self.res
 
-    def damped_newton(self , epsilon , maxStep=1000):
+    def damped_newton(self):
         step = 0
         x = self.x0
         f = self.function.evaluate(x)
@@ -313,9 +314,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
             self.set_x0_from_decimal_matrix(x)
             step += 1
             sNorm = s.frobenius_norm()
-            if abs(a*sNorm) <= epsilon:
+            if abs(a*sNorm) <= self.epsilonx:
                 break
-            if step > maxStep:
+            if step > self.maxStep:
                 break
         self.res = [x , f , step]
         return self.res
@@ -410,7 +411,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
         self.res = [x , fMin , k , step]
         return self.res
     
-    def quasi_newton(self , maxStep: int , method=MethodType.dfp):
+    def quasi_newton(self , method=MethodType.dfp):
         x = self.x0
         # 第一步使用负梯度方向搜索,手动
         e = []
@@ -459,19 +460,19 @@ class MultidimensionOptimization(OnedimensionOptimization):
 
     def solve(self , method=MethodType.coordinateDescent , maxStep=1000):
         if method == MethodType.coordinateDescent:
-            return self.coordinate_descent(maxStep=maxStep)
+            return self.coordinate_descent()
         elif method == MethodType.gradientDescent:
-            return self.gradient_descent(self.epsilonx , maxStep)
+            return self.gradient_descent()
         elif method == MethodType.dampedNewton:
-            return self.damped_newton(self.epsilonx , maxStep)
+            return self.damped_newton()
         elif method == MethodType.conjugateDirection:
-            return self.conjugate_direction(self.epsilonx , maxStep)
+            return self.conjugate_direction()
         elif method == MethodType.powell:
-            return self.powell_method(self.epsilonx , maxStep)
+            return self.powell_method()
         elif method == MethodType.dfp:
-            return self.quasi_newton(maxStep , method=MethodType.dfp)
+            return self.quasi_newton(method=MethodType.dfp)
         elif method == MethodType.bfgs:
-            return self.quasi_newton(maxStep , method=MethodType.bfgs)
+            return self.quasi_newton(method=MethodType.bfgs)
 
 
 if __name__ == "__main__":
@@ -516,7 +517,7 @@ if __name__ == "__main__":
         0.01,
         0.01
     )
-    print(q.solve(method=MethodType.gradientDescent)[1])
+    print(q.solve(method=MethodType.gradientDescent)[0])
     print(q.res)
 
 # 阻尼牛顿法
