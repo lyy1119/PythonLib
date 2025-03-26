@@ -302,8 +302,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
     def damped_newton(self):
         step = 0
         x = self.x0
-        f = self.function.evaluate(x)
+        f = Decimal(0)
         while True:
+            step += 1
             h = self.function.evaluate_hessian_matrix(x)
             g = self.function.evaluate_gradient(x)
             h.inverse()
@@ -312,7 +313,6 @@ class MultidimensionOptimization(OnedimensionOptimization):
             # 一维优化求步长
             a , x , f = super().solve(self.oneDimensionProblemMethod)
             self.set_x0_from_decimal_matrix(x)
-            step += 1
             sNorm = s.frobenius_norm()
             if abs(a*sNorm) <= self.epsilonx:
                 break
@@ -410,7 +410,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 break
         self.res = [x , fMin , k , step]
         return self.res
-    
+
     def quasi_newton(self , method=MethodType.dfp):
         x = self.x0
         # 第一步使用负梯度方向搜索,手动
