@@ -89,6 +89,8 @@ class OnedimensionOptimization(Problem):
             self.write_logs(f"{self.function}")
             self.write_logs("初始点：")
             self.write_logs(f"{self.x0}")
+            self.write_logs("搜索方向：")
+            self.write_logs(f"{self.s}")
             self.write_logs(f"epsilonx = {self.epsilonx}")
             self.write_logs(f"epsilonf = {self.epsilonf}")
             self.write_logs(f"最大迭代步长： {self.maxStep}")
@@ -238,10 +240,12 @@ class OnedimensionOptimization(Problem):
                 if que[1][2] > que[2][2]: # F1>F2
                     # F1高，舍弃A
                     # A1 , A2 -> A , A1 , A2 =None
+                    self.write_logs("舍弃A")
                     que[0] = deepcopy(que[1])
                     que[1] = deepcopy(que[2])
                     que[2] = None
                 else: # que[1][3] < que[2][3]
+                    self.write_logs("舍弃B")
                     que[3] = deepcopy(que[2])
                     que[2] = deepcopy(que[1])
                     que[1] = None
@@ -327,18 +331,39 @@ class MultidimensionOptimization(OnedimensionOptimization):
         s = [1] # 防报错用
         super().__init__(function, x0, s, epsilonx, epsilonf , maxStep)
         self.oneDimensionProblemMethod = MethodType.goldenSection
+        if type(self) == MultidimensionOptimization:
+            self.write_logs("======================================")
+            self.write_logs("创建多维优化问题对象")
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.write_logs(f"时间： {current_time}")
+            self.write_logs("---------------------------------")
+            self.write_logs("当前参数")
+            self.write_logs("函数：")
+            self.write_logs(f"{self.function}")
+            self.write_logs("初始点：")
+            self.write_logs(f"{self.x0}")
+            self.write_logs(f"epsilonx = {self.epsilonx}")
+            self.write_logs(f"epsilonf = {self.epsilonf}")
+            self.write_logs(f"最大迭代步长： {self.maxStep}")
+            self.write_logs("======================================\n")
 
     def coordinate_descent(self):
         dimension = self.function.dimension
         step = 0
         while True:
             a = Decimal(0)
-            step = step + 1
             for i in range(dimension):
+                step = step + 1
                 s = [0 for _ in range(dimension)]
                 s[i] = 1
                 self.set_s(s)
                 _a , x , f = super().solve(method=self.oneDimensionProblemMethod)
+                self.write_logs(f"迭代：{step}")
+                self.write_logs(f"优化方向：\n{s}")
+                self.write_logs(f"本次迭代优化结果：\n")
+                self.write_logs(f"步长a={_a}")
+                self.write_logs(f"X*=\n{x}")
+                self.write_logs(f"F*={f}")
                 a = max(a , abs(_a))
                 self.set_x0_from_decimal_matrix(x)
             if abs(a) <= self.epsilonx:
@@ -346,6 +371,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             if step >= self.maxStep:
                 raise ValueError(f"迭代达到最大步长.最后的优化步a={a}")
         self.res = [self.x0 , f]
+        self.write_logs("完成：坐标轮换法完成")
         return self.res
 
     def gradient_descent(self):
@@ -354,20 +380,29 @@ class MultidimensionOptimization(OnedimensionOptimization):
         f = Decimal(0)
         while True:
             step = step + 1
+            self.write_logs(f"迭代：{step}")
             g = self.function.evaluate_gradient(x)
+            self.write_logs(f"梯度向量为：\n{g}")
             gNorm = g.frobenius_norm()
+            self.write_logs(f"梯度的模长为：{gNorm}")
             if gNorm == 0:
                 # 对于凸优化，gnorm为0时，即最优点（凸函数的hessian矩阵处处正定）
                 break
             sMatrix = (- g / gNorm)
+            self.write_logs(f"搜索方向为：\n{sMatrix}")
             self.set_s(sMatrix)
             # 调用父类一维优化
-            _ , x , f = super().solve(self.oneDimensionProblemMethod)
+            a , x , f = super().solve(self.oneDimensionProblemMethod)
+            self.write_logs(f"本次迭代优化结果：")
+            self.write_logs(f"a={a}")
+            self.write_logs(f"X*=\n{x}")
+            self.write_logs(f"f={f}")
             self.set_x0_from_decimal_matrix(x)
             if abs(gNorm) <= self.epsilonx:
                 break
             if step > self.maxStep:
                 break
+        self.write_logs(f"完成：梯度法优化完成.")
         self.res = [x , f]
         return self.res
 
@@ -377,19 +412,28 @@ class MultidimensionOptimization(OnedimensionOptimization):
         f = Decimal(0)
         while True:
             step += 1
+            self.write_logs(f"迭代：{step}")
             h = self.function.evaluate_hessian_matrix(x)
             g = self.function.evaluate_gradient(x)
             h.inverse()
+            self.write_logs(f"海塞矩阵逆矩阵为：\n{h}")
+            self.write_logs(f"梯度矩阵为：\n{g}")
             s = - h*g
+            self.write_logs(f"优化方向S=\n{s}")
             self.set_s(s)
             # 一维优化求步长
             a , x , f = super().solve(self.oneDimensionProblemMethod)
+            self.write_logs(f"本次迭代优化结果：")
+            self.write_logs(f"A={a}")
+            self.write_logs(f"X*=\n{x}")
+            self.write_logs(f"F*={f}")
             self.set_x0_from_decimal_matrix(x)
             sNorm = s.frobenius_norm()
             if abs(a*sNorm) <= self.epsilonx:
                 break
             if step > self.maxStep:
                 break
+        self.write_logs(f"完成：阻尼牛顿法优化完成")
         self.res = [x , f , step]
         return self.res
 
@@ -397,6 +441,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
         # 适用范围有限
         # 构造ss
         step = 0
+        round = 0
         from collections import deque
         ss = deque()
         for i in range(self.function.dimension):
@@ -406,6 +451,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             ss.append(s)
         # ss存储每一轮搜索中各步所用的方向向量
         for i in range(self.function.dimension):
+            round = round + 1
             # 一共进行n轮，n为维数
             x0 = self.x0
             for s in ss:
@@ -413,14 +459,30 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 _a , x , _f = super().solve(method=self.oneDimensionProblemMethod)
                 self.set_x0_from_decimal_matrix(x)
                 step += 1
+                self.write_logs(f"迭代：第{round}轮， 第{step}步")
+                self.write_logs(f"优化方向：")
+                self.write_logs(f"S=\n{s}")
+                self.write_logs(f"本次迭代优化结果：")
+                self.write_logs(f"A={_a}")
+                self.write_logs(f"X*=\n{x}")
+                self.write_logs(f"F*={_f}")
             # xn 就是 x
             s = x - x0
             ss.popleft()
             ss.append(s)
+
             self.set_s(s)
             _a , x , f = super().solve(self.oneDimensionProblemMethod)
             self.set_x0_from_decimal_matrix(x)
             step = step + 1
+            self.write_logs(f"迭代：第{round}轮， 第{step}步")
+            self.write_logs(f"优化方向(新的方向)：")
+            self.write_logs(f"S=\n{s}")
+            self.write_logs(f"本次迭代优化结果：")
+            self.write_logs(f"A={_a}")
+            self.write_logs(f"X*=\n{x}")
+            self.write_logs(f"F*={_f}")
+        self.write_logs(f"完成：共轭方向法完成.")
         self.res = [x , f]
         return self.res
 
@@ -432,7 +494,6 @@ class MultidimensionOptimization(OnedimensionOptimization):
             s[i] = [1]
             s = MathFunction.DecimalMatrix(s)
             ss.append(s)
-        # 
         round = 0
         step = 0
         # 优化开始
@@ -449,17 +510,26 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 self.set_x0_from_decimal_matrix(x)
                 fList.append(f)
                 step = step + 1
+                self.write_logs(f"迭代： 第{round}轮 ， 第{step}次")
+                self.write_logs(f"优化方向：")
+                self.write_logs(f"S={s}")
+                self.write_logs(f"本轮优化结果：")
+                self.write_logs(f"A={a}")
+                self.write_logs(f"X*=\n{x}")
+                self.write_logs(f"F*={f}")
 
             # 计算共轭方向
             s = x - x0
-
+            self.write_logs(f"计算得本轮({round})的共轭方向为S\n{s}")
             # 计算x3
             x3 = 2*x - x0
+            self.write_logs(f"X3={x3}")
             f1 = self.function.evaluate(x0)
             # f2 = self.function.evaluate(x)
             # 此时x就是f对应的点
             f2 = fMin
             f3 = self.function.evaluate(x3)
+            self.write_logs(f"F1={f1}\nF2={f2}\nF3={f3}")
 
             # 计算delta_m
             deltaM = fList[0] - fList[1]
@@ -469,32 +539,44 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 if temp > deltaM:
                     deltaM = temp
                     m = i-1
-
+            self.write_logs(f"计算得：deltaM={deltaM}")
             # 是否替换判据
             if f3 < f1 and (f1 - 2*f2 + f3)*(f1-f2-deltaM)**2 < Decimal("0.5")*deltaM*(f1-f3)**2:
+                self.write_logs(f"需要替换方向")
                 self.set_s(s)
+                self.write_logs(f"新的方向为S:\n{s}")
                 a , x , fMin = super().solve(self.oneDimensionProblemMethod)
                 f2 = fMin
+                self.write_logs(f"新方向的优化结果：")
+                self.write_logs(f"A={a}")
+                self.write_logs(f"X*={x}")
+                self.write_logs(f"F*={fMin}")
                 # 删去本轮迭代中最大变化量方向
+                self.write_logs(f"删去方向的行数为：{m}")
                 ss.pop(m)
                 # s方向从末尾补上（s=xn - x0）
                 ss.append(s)
                 # 设置优化点为下一轮迭代的起始点
                 self.set_x0_from_decimal_matrix(x)
             elif f > f3:
+                self.write_logs(f"不需要替换方向")
                 self.set_x0_from_decimal_matrix(x3)
                 f2 = f3
                 fMin = f3
             # 计算Dx，即相邻迭代点之间的长度
             dx = (x0 - x).frobenius_norm()
+            self.write_logs(f"deltaX={dx}")
             # 计算df
             df = abs((f1-f2)/f1)
+            self.write_logs(f"deltaF={df}")
             if dx < self.epsilonx or df < self.epsilonf:
                 break
+        self.write_logs(f"完成：powell法优化完成.")
         self.res = [x , fMin]
         return self.res
 
     def quasi_newton(self , method=MethodType.dfp):
+        step = 1
         x = self.x0
         # 第一步使用负梯度方向搜索,手动
         e = []
@@ -509,10 +591,15 @@ class MultidimensionOptimization(OnedimensionOptimization):
         self.set_s(s)
         x0 = x
         a , x , f = super().solve(self.oneDimensionProblemMethod)
+        self.write_logs(f"迭代：1，使用负梯度方向优化")
+        self.write_logs(f"优化方向S:\n{s}")
+        self.write_logs(f"优化结果:\n")
+        self.write_logs(f"A={a}")
+        self.write_logs(f"X*=\n{x}")
+        self.write_logs(f"F*={f}")
         g0 = g
         self.set_x0_from_decimal_matrix(x)
         g = self.function.evaluate_gradient(x)
-        step = 0
         while True:
             step = step + 1
             g = self.function.evaluate_gradient(x)
@@ -520,6 +607,11 @@ class MultidimensionOptimization(OnedimensionOptimization):
             deltaG = g - g0
             transposeDeltaX = transpose(deltaX)
             transposeDeltaG = transpose(deltaG)
+            self.write_logs(f"迭代：{step}")
+            self.write_logs(f"当前点的梯度向量为:")
+            self.write_logs(f"{g}")
+            self.write_logs(f"DeltaX=\n{deltaX}")
+            self.write_logs(f"DeltaG=\n{deltaG}")
 
             # 计算修正矩阵
             # dfp法
@@ -529,37 +621,53 @@ class MultidimensionOptimization(OnedimensionOptimization):
             elif method == MethodType.bfgs:
                 tX = transpose(x)
                 e = (deltaX * transposeDeltaX + ((transposeDeltaG*inversH*deltaG).frobenius_norm()*deltaX*transposeDeltaX)/((transposeDeltaX*deltaG).frobenius_norm()) - inversH*deltaG*transposeDeltaX - deltaX*transposeDeltaG*inversH)/((tX*deltaG).frobenius_norm())
-            
+            self.write_logs(f"修正矩阵e：")
+            self.write_logs(f"{e}")
             # 计算新的h矩阵
             inversH = inversH + e
+            self.write_logs(f"拟黑塞矩阵H的逆为")
+            self.write_logs(f"{inversH}")
             # 计算新的方向s
             s = - inversH * g
+            self.write_logs(f"搜索方向为S:\n{s}")
             self.set_s(s)
             # 将此轮的数值记录在“上一轮变量”
             x0 = x
             g0 = g
             f0 = f
             a , x , f = super().solve(self.oneDimensionProblemMethod)
+            self.write_logs(f"本次迭代搜索结果:")
+            self.write_logs(f"A={a}")
+            self.write_logs(f"X*=\n{x}")
+            self.write_logs(f"F*={f}")
             self.set_x0_from_decimal_matrix(x)
             if abs(a) < self.epsilonx and abs((f-f0)) < self.epsilonf:
                 break
-        self.res = [x , f , step]
+        self.write_logs(f"完成：dfp/bfgs优化完成")
+        self.res = [x , f]
         return self.res
 
     def solve(self , method=MethodType.coordinateDescent):
         if method == MethodType.coordinateDescent:
+            self.write_logs("操作：坐标轮换法")
             return self.coordinate_descent()
         elif method == MethodType.gradientDescent:
+            self.write_logs("操作：梯度法")
             return self.gradient_descent()
         elif method == MethodType.dampedNewton:
+            self.write_logs("操作：阻尼牛顿法")
             return self.damped_newton()
         elif method == MethodType.conjugateDirection:
+            self.write_logs("操作：共轭方向法")
             return self.conjugate_direction()
         elif method == MethodType.powell:
+            self.write_logs("操作：powell法")
             return self.powell_method()
         elif method == MethodType.dfp:
+            self.write_logs("操作：dfp法")
             return self.quasi_newton(method=MethodType.dfp)
         elif method == MethodType.bfgs:
+            self.write_logs("操作：bfgs法")
             return self.quasi_newton(method=MethodType.bfgs)
 
 
@@ -654,3 +762,4 @@ if __name__ == "__main__":
     # q.oneDimensionProblemMethod=MethodType.quadraticInterpolation
     print(q.solve(method=MethodType.bfgs))
     print(q.res[0])
+    print(q.read_logs())
