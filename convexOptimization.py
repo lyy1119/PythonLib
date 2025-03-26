@@ -256,26 +256,24 @@ class MultidimensionOptimization(OnedimensionOptimization):
         super().__init__(function, x0, s, epsilonx, epsilonf , maxStep)
         self.oneDimensionProblemMethod = MethodType.goldenSection
 
-    def coordinate_descent(self , epsilon=0 , maxStep=1000):
-        if epsilon == 0:
-            epsilon = self.epsilonx
+    def coordinate_descent(self):
         dimension = self.function.dimension
         step = 0
         while True:
             a = Decimal(0)
+            step = step + 1
             for i in range(dimension):
-                s = [0 for j in range(dimension)]
+                s = [0 for _ in range(dimension)]
                 s[i] = 1
                 self.set_s(s)
-                _a , _x , _f = super().solve(method=self.oneDimensionProblemMethod)
+                _a , x , f = super().solve(method=self.oneDimensionProblemMethod)
                 a = max(a , abs(_a))
-                self.set_x0_from_decimal_matrix(_x)
-            if step >= maxStep:
+                self.set_x0_from_decimal_matrix(x)
+            if step >= self.maxStep:
                 raise ValueError("迭代达到最大步长.")
             if abs(a) <= self.epsilonx:
                 break
-            step += 1
-        self.res = [a , self.x0 , _f]
+        self.res = [self.x0 , f]
         return self.res
 
     def gradient_descent(self , epsilon , maxStep=1000):
