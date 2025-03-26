@@ -455,9 +455,6 @@ class MultidimensionOptimization(OnedimensionOptimization):
         self.res = [x , f , step]
         return self.res
 
-    def bfgs(self):
-        pass
-
     def solve(self , method=MethodType.coordinateDescent , maxStep=1000):
         if method == MethodType.coordinateDescent:
             return self.coordinate_descent()
