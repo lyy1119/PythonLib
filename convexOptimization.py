@@ -38,6 +38,13 @@ class Problem:
         self.function = MathFunction(function)
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0]) # 转化为列向量
         self.maxStep = maxStep
+        self.logs = "" # 日志
+    
+    def clean_logs(self):
+        self.logs = ""
+    
+    def read_logs(self):
+        return deepcopy(self.logs)
 
     def set_x0_from_list(self , x0):
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0])
