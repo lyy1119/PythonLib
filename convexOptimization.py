@@ -29,13 +29,15 @@ class Problem:
             pass
         def __str__(self):
             pass
-    def __init__(self , function: str , x0: list):
+    def __init__(self , function: str , x0: list , maxStep=1000):
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
+        maxStep 最大迭代步长 默认值1000
         '''
         self.function = MathFunction(function)
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0]) # 转化为列向量
+        self.maxStep = maxStep
 
     def set_x0_from_list(self , x0):
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0])
@@ -45,7 +47,7 @@ class Problem:
 
 class OnedimensionOptimization(Problem):
 
-    def __init__(self, function, x0, s: list , epsilonx: float , epsilonf: float):
+    def __init__(self, function: MathFunction, x0: list, s: list , epsilonx: float , epsilonf: float , maxStep=1000):
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
@@ -54,7 +56,7 @@ class OnedimensionOptimization(Problem):
         epsilonf 必须传入
         epsilonx 必须传入
         '''
-        super().__init__(function, x0)
+        super().__init__(function, x0 , maxStep)
 
         self.s = MathFunction.DecimalMatrix([[i] for i in s])
         self.searchInterval = [None , None] # 应该为decimal
@@ -99,10 +101,10 @@ class OnedimensionOptimization(Problem):
             queue[2] = [a + q*(b-a) , None , None]
         self.evaluate_point(queue)
     
-    def quadratic_interpolation(self):
+    def quadratic_interpolation(self , a: Decimal , b: Decimal):
         # 计算初始点
-        a1 = self.searchInterval[0]
-        a3 = self.searchInterval[1]
+        a1 = a
+        a3 = b
         a2 = (a1+a3)/2
         quadraticPoint = [
             [a1 , None , None], 
@@ -135,6 +137,9 @@ class OnedimensionOptimization(Problem):
                 break
             f2 = quadraticPoint[1][2]
             fp = Decimal(0)
+            ef = abs(f2)
+            if ef < self.epsilonf:
+                ef = Decimal(1)
             # 插入ap
             for i in range(3):
                 if quadraticPoint[i][0] > ap[0]:
@@ -143,31 +148,27 @@ class OnedimensionOptimization(Problem):
                     fp = quadraticPoint[i][2]
                     break
             # 弹出
-            for i in range(1,3):
+            for i in (1,2):
                 if quadraticPoint[i-1][2] > quadraticPoint[i][2] and quadraticPoint[i+1][2] > quadraticPoint[i][2]:
                     # 找到高低高
                     quadraticPoint = quadraticPoint[i-1:i+2]
+                    break
             ef1 = abs(f2 - fp)
-            if ef1 < self.epsilonf:
+            if ef1/ef < self.epsilonf:
                 break
         self.res = quadraticPoint[1]
         return self.res
 
-    def golden_section(self , jMax: int):
+    def golden_section(self , a , b):
         '''
         jMax: 满足函数值间隔的最大迭代次数
         '''
-        a = self.searchInterval[0]
-        b = self.searchInterval[1]
-                        #  A    A1  A2  B
         que = deque([[a , None , None] , None , None , [b , None , None]])   # [[] , [] , [] , []]
         while True:
-            j = 0
+            step = 0
             self.calculate_golden_point(que)
             while True:
-                j += 1
-                # 计算各点,及其函数值
-                self.calculate_golden_point(que)
+                step += 1
                 if que[1][2] > que[2][2]: # F1>F2
                     # F1高，舍弃A
                     # A1 , A2 -> A , A1 , A2 =None
@@ -179,7 +180,7 @@ class OnedimensionOptimization(Problem):
                     que[2] = deepcopy(que[1])
                     que[1] = None
                 self.calculate_golden_point(que)
-                if j > jMax or abs((que[2][2] - que[1][2])) <= self.epsilonf:
+                if step > self.maxStep or abs((que[2][2] - que[1][2])) <= self.epsilonf:
                     break
             if abs((que[2][0] - que[1][0])) < self.epsilonx:
                 break
@@ -187,7 +188,7 @@ class OnedimensionOptimization(Problem):
                 que[0] = deepcopy(que[1])
                 que[1] = None
                 que[3] = deepcopy(que[2])
-                que[2] == None
+                que[2] = None
         if que[1][2] > que[2][2]:
             res = que[2]
         else:
@@ -196,17 +197,17 @@ class OnedimensionOptimization(Problem):
         return self.res
 
     def get_search_interval(self):
-        self.searchInterval = self.determine_search_interval()
+        return self.determine_search_interval()
 
-    def solve(self , method=MethodType.goldenSection , maxSteps=1000):
-        self.get_search_interval()
+    def solve(self , method=MethodType.goldenSection):
+        a , b = self.get_search_interval()
         '''
         返回 [a , x , f]
         '''
         if method == MethodType.goldenSection:
-            return self.golden_section(maxSteps)
+            return self.golden_section(a , b)
         elif method == MethodType.quadraticInterpolation:
-            return self.quadratic_interpolation()
+            return self.quadratic_interpolation(a , b)
 
     def determine_search_interval(self):
         '''
@@ -214,7 +215,7 @@ class OnedimensionOptimization(Problem):
         x0: 起点
         t0: 初始步长
         s: 搜索方向
-        return {"float" : [a , b] , "Decimal" : [a , b]}
+        return [a: Decimal , b: Decimal]
         '''
         step = Decimal(1) # 步长
         from collections import deque
@@ -250,9 +251,9 @@ class OnedimensionOptimization(Problem):
 
 
 class MultidimensionOptimization(OnedimensionOptimization):
-    def __init__(self, function, x0, epsilonx, epsilonf):
-        s = [1 , 1] # 防报错用
-        super().__init__(function, x0, s, epsilonx, epsilonf)
+    def __init__(self, function, x0, epsilonx, epsilonf , maxStep=1000):
+        s = [1] # 防报错用
+        super().__init__(function, x0, s, epsilonx, epsilonf , maxStep)
         self.oneDimensionProblemMethod = MethodType.goldenSection
 
     def coordinate_descent(self , epsilon=0 , maxStep=1000):
@@ -311,7 +312,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             s = - h*g
             self.set_s(s)
             # 一维优化求步长
-            a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+            a , x , f = super().solve(self.oneDimensionProblemMethod)
             self.set_x0_from_decimal_matrix(x)
             step += 1
             sNorm = s.frobenius_norm()
@@ -322,7 +323,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
         self.res = [x , f , step]
         return self.res
 
-    def conjugate_direction(self , epsilon , maxStep):
+    def conjugate_direction(self):
         # 适用范围有限
         # 构造ss
         step = 0
@@ -339,7 +340,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             x0 = self.x0
             for s in ss:
                 self.set_s(s)
-                _a , x , _f = super().solve(method=self.oneDimensionProblemMethod , maxSteps=maxStep)
+                _a , x , _f = super().solve(method=self.oneDimensionProblemMethod)
                 self.set_x0_from_decimal_matrix(x)
                 step += 1
             # xn 就是 x
@@ -347,13 +348,13 @@ class MultidimensionOptimization(OnedimensionOptimization):
             ss.popleft()
             ss.append(s)
             self.set_s(s)
-            _a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+            _a , x , f = super().solve(self.oneDimensionProblemMethod)
             self.set_x0_from_decimal_matrix(x)
             step = step + 1
         self.res = [x , f]
         return self.res
 
-    def powell_method(self , epsilon , maxStep):
+    def powell_method(self):
         ss = []
         for i in range(self.function.dimension):
             s = [[0] for _ in range(self.function.dimension)]
@@ -369,7 +370,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             fList = [self.function.evaluate(x0)]
             for _s in ss:
                 self.set_s(_s)
-                a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+                a , x , f = super().solve(self.oneDimensionProblemMethod)
                 fMin = f
                 self.set_x0_from_decimal_matrix(x)
                 fList.append(f)
@@ -391,7 +392,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
                     m = i-1
             if f3 < f1 and (f1 - 2*f2 + f3)*(f1-f2-deltaM)**2 < Decimal("0.5")*deltaM*(f1-f3)**2:
                 self.set_s(s)
-                a , x , fMin = super().solve(self.oneDimensionProblemMethod , maxStep)
+                a , x , fMin = super().solve(self.oneDimensionProblemMethod)
                 f2 = fMin
                 # 删去本轮迭代中最大变化量方向
                 ss.pop(m)
@@ -426,7 +427,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
         s = -inversH * g
         self.set_s(s)
         x0 = x
-        a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+        a , x , f = super().solve(self.oneDimensionProblemMethod)
         g0 = g
         self.set_x0_from_decimal_matrix(x)
         g = self.function.evaluate_gradient(x)
@@ -449,7 +450,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             x0 = x
             g0 = g
             f0 = f
-            a , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+            a , x , f = super().solve(self.oneDimensionProblemMethod)
             self.set_x0_from_decimal_matrix(x)
             if abs(a) < self.epsilonx and abs((f-f0)) < self.epsilonf:
                 break
@@ -493,12 +494,12 @@ if __name__ == "__main__":
         0.15,
     )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
-    print(q.solve(MethodType.goldenSection , 50))
+    print(q.solve(MethodType.goldenSection))
 
 # 二次插值测试 
     print("二次插值测试")
     q.searchInterval = [Decimal(-3) , Decimal(5)]
-    print(q.solve(MethodType.quadraticInterpolation , 50))
+    print(q.solve(MethodType.quadraticInterpolation))
 
 # 坐标轮换测试
     print("坐标轮换法测试.")
