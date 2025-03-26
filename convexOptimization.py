@@ -5,6 +5,7 @@ from enum import Enum
 from collections import deque
 from copy import deepcopy
 from decimal import Decimal, getcontext
+from datetime import datetime
 
 print(getcontext().prec)  # 默认输出 28
 getcontext().prec = 50  # 设置更高的精度
@@ -39,6 +40,10 @@ class Problem:
         self.x0 = MathFunction.DecimalMatrix([[i] for i in x0]) # 转化为列向量
         self.maxStep = maxStep
         self.logs = "" # 日志
+        self.output = 3
+
+    def set_output_accuracy(self , prec: int):
+        self.output = prec
 
     def clean_logs(self):
         self.logs = ""
@@ -73,6 +78,21 @@ class OnedimensionOptimization(Problem):
         self.epsilonf = epsilonf
         self.epsilonx = epsilonx
         self.res = None
+        if type(self) == OnedimensionOptimization:
+            self.write_logs("======================================")
+            self.write_logs("创建一维优化问题对象")
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.write_logs(f"时间： {current_time}")
+            self.write_logs("---------------------------------")
+            self.write_logs("当前参数")
+            self.write_logs("函数：")
+            self.write_logs(f"{self.function}")
+            self.write_logs("初始点：")
+            self.write_logs(f"{self.x0}")
+            self.write_logs(f"epsilonx = {self.epsilonx}")
+            self.write_logs(f"epsilonf = {self.epsilonf}")
+            self.write_logs(f"最大迭代步长： {self.maxStep}")
+            self.write_logs("======================================\n")
 
     def set_s(self , s):
         '''
@@ -135,14 +155,30 @@ class OnedimensionOptimization(Problem):
             a3 = points[2][0]
             return ((f2-f1)/(a2-a1)-k1)/(a2-a3)
         self.evaluate_point(quadraticPoint)
+        step = 0
         while True:
+            step = step + 1
+            self.write_logs(f"迭代：{step}")
+            self.write_logs(f"A1={quadraticPoint[0][0]}")
+            self.write_logs(f"X1=\n{quadraticPoint[0][1]}")
+            self.write_logs(f"F1={quadraticPoint[0][2]}")
+            self.write_logs(f"A2={quadraticPoint[1][0]}")
+            self.write_logs(f"X2=\n{quadraticPoint[1][1]}")
+            self.write_logs(f"F2={quadraticPoint[1][2]}")
+            self.write_logs(f"A3={quadraticPoint[2][0]}")
+            self.write_logs(f"X1=\n{quadraticPoint[2][1]}")
+            self.write_logs(f"F1={quadraticPoint[2][2]}")
             k1 = cal_k1(quadraticPoint)
             k2 = cal_k2(quadraticPoint , k1)
+            self.write_logs(f"k1= {k1}")
+            self.write_logs(f"k2= {k2}")
             if k2 == 0:
+                self.write_logs("k2=0,迭代结束.")
                 break
             def cal_ap(points , k1 , k2) -> list:
                 return [Decimal("0.5")*(points[0][0] + points[2][0]-k1/k2) , None , None]
             ap = cal_ap(quadraticPoint , k1 , k2)
+            self.write_logs(f"Ap={ap[0]}")
             if (ap[0] - quadraticPoint[0][0])*(quadraticPoint[2][0] - ap[0]) < 0:
                 break
             f2 = quadraticPoint[1][2]
@@ -156,6 +192,8 @@ class OnedimensionOptimization(Problem):
                     quadraticPoint.insert(i , ap)
                     self.evaluate_point(quadraticPoint)
                     fp = quadraticPoint[i][2]
+                    self.write_logs(f"Xp=\n{quadraticPoint[i][1]}")
+                    self.write_logs(f"Fp={fp}")
                     break
             # 弹出
             for i in (1,2):
@@ -166,6 +204,9 @@ class OnedimensionOptimization(Problem):
             ef1 = abs(f2 - fp)
             if ef1/ef < self.epsilonf:
                 break
+            if step > self.maxStep:
+                raise ValueError("优化超过最大步长.")
+        self.write_logs("完成：二次插值优化结束")
         self.res = quadraticPoint[1]
         return self.res
 
@@ -173,12 +214,27 @@ class OnedimensionOptimization(Problem):
         '''
         jMax: 满足函数值间隔的最大迭代次数
         '''
+        totalStep = 0
         que = deque([[a , None , None] , None , None , [b , None , None]])   # [[] , [] , [] , []]
         while True:
             step = 0
             self.calculate_golden_point(que)
             while True:
                 step += 1
+                totalStep += 1
+                self.write_logs(f"迭代：{totalStep}")
+                self.write_logs(f"A:{que[0][0]}")
+                self.write_logs(f"X=\n{que[0][1]}")
+                self.write_logs(f"F={que[0][2]}")
+                self.write_logs(f"A1:{que[1][0]}")
+                self.write_logs(f"X=\n{que[1][1]}")
+                self.write_logs(f"F={que[1][2]}")
+                self.write_logs(f"A2:{que[2][0]}")
+                self.write_logs(f"X=\n{que[2][1]}")
+                self.write_logs(f"F={que[2][2]}")
+                self.write_logs(f"B:{que[3][0]}")
+                self.write_logs(f"X=\n{que[3][1]}")
+                self.write_logs(f"F={que[3][2]}")
                 if que[1][2] > que[2][2]: # F1>F2
                     # F1高，舍弃A
                     # A1 , A2 -> A , A1 , A2 =None
@@ -203,6 +259,7 @@ class OnedimensionOptimization(Problem):
             res = que[2]
         else:
             res = que[1]
+        self.write_logs("完成；黄金分割优化完成")
         self.res = res
         return self.res
 
@@ -210,13 +267,18 @@ class OnedimensionOptimization(Problem):
         return self.determine_search_interval()
 
     def solve(self , method=MethodType.goldenSection):
+        self.write_logs("操作：开始一维优化")
+        self.write_logs("操作：确定搜索区间")
         a , b = self.get_search_interval()
+        self.write_logs(f"完成：搜索区间为[{a} , {b}]")
         '''
         返回 [a , x , f]
         '''
         if method == MethodType.goldenSection:
+            self.write_logs("操作：黄金分割优化")
             return self.golden_section(a , b)
         elif method == MethodType.quadraticInterpolation:
+            self.write_logs("操作：二次插值优化")
             return self.quadratic_interpolation(a , b)
 
     def determine_search_interval(self):
@@ -519,12 +581,13 @@ if __name__ == "__main__":
     )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
     print(q.solve(MethodType.goldenSection))
-
+    q.clean_logs()
 # 二次插值测试 
     print("二次插值测试")
     q.searchInterval = [Decimal(-3) , Decimal(5)]
     print(q.solve(MethodType.quadraticInterpolation))
 
+    print(q.read_logs())
 # 坐标轮换测试
     print("坐标轮换法测试.")
     q = MultidimensionOptimization(
