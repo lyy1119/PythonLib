@@ -7,7 +7,6 @@ from copy import deepcopy
 from decimal import Decimal, getcontext
 from datetime import datetime
 
-print(getcontext().prec)  # 默认输出 28
 getcontext().prec = 50  # 设置更高的精度
 
 
@@ -24,23 +23,24 @@ class MethodType(Enum):
     dfp = 8
     bfgs = 9
 
-outputAccuracy = 5
+outputAccuracy = 4
 
 class Problem:
     class Result:
-        def __init__(self , X: MathFunction.DecimalMatrix , F: Decimal):
-            self.realX = X
-            self.realF = F
-            self.outputF = deepcopy(F)
-            self.outputF.quantize(Decimal("0.1")**outputAccuracy)
+        def __init__(self , X: MathFunction.DecimalMatrix , F: Decimal , step: int):
+            self.step = step
+            self.realX = deepcopy(X)
+            self.realF = deepcopy(F)
+            self.outputF = self.realF.quantize(Decimal("0.1")**outputAccuracy)
             self.outputX = deepcopy(X)
-            for row in self.outputX:
-                for i in row:
-                    i.quantize(Decimal("0.1")**outputAccuracy)
+            for i in range(len(self.outputX.data)):
+                for j in range(len(self.outputX.data[0])):
+                    self.outputX.data[i][j] = self.outputX.data[i][j].quantize(Decimal("0.1")**outputAccuracy)
         def __str__(self):
             s = ''
             s += "=============================\n"
             s += "优化结果\n"
+            s +=f"迭代次数：{self.step}\n"
             s += "X=\n"
             s +=f"{self.outputX}\n"
             s +=f"函数值F={self.outputF}\n"
@@ -225,8 +225,11 @@ class OnedimensionOptimization(Problem):
             if step > self.maxStep:
                 raise ValueError("优化超过最大步长.")
         self.write_logs("完成：二次插值优化结束")
-        self.res = quadraticPoint[1]
-        return self.res
+        res = quadraticPoint[1]
+        ResultRes = deepcopy(quadraticPoint[1][1:3:1])
+        ResultRes.append(step)
+        self.res = self.Result(ResultRes[0] , ResultRes[1] , ResultRes[2])
+        return res
 
     def golden_section(self , a , b):
         '''
@@ -280,8 +283,10 @@ class OnedimensionOptimization(Problem):
         else:
             res = que[1]
         self.write_logs("完成；黄金分割优化完成")
-        self.res = res
-        return self.res
+        ResultRes = deepcopy(res[1:3:1])
+        ResultRes.append(step)
+        self.res = self.Result(ResultRes[0] , ResultRes[1] , ResultRes[2])
+        return res
 
     def get_search_interval(self):
         return self.determine_search_interval()
@@ -386,9 +391,10 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 break
             if step >= self.maxStep:
                 raise ValueError(f"迭代达到最大步长.最后的优化步a={a}")
-        self.res = [self.x0 , f]
+        res = [self.x0 , f , step]
         self.write_logs("完成：坐标轮换法完成")
-        return self.res
+        self.res = self.Result(res[0] , res[1] , res[2])
+        return res
 
     def gradient_descent(self):
         step = 0
@@ -419,8 +425,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
             if step > self.maxStep:
                 break
         self.write_logs(f"完成：梯度法优化完成.")
-        self.res = [x , f]
-        return self.res
+        res = [x , f , step]
+        self.res = self.Result(res[0] , res[1] , res[2])
+        return res
 
     def damped_newton(self):
         step = 0
@@ -450,8 +457,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
             if step > self.maxStep:
                 break
         self.write_logs(f"完成：阻尼牛顿法优化完成")
-        self.res = [x , f , step]
-        return self.res
+        res = [x , f , step]
+        self.res = self.Result(res[0] , res[1] , res[2])
+        return res
 
     def conjugate_direction(self):
         # 适用范围有限
@@ -499,8 +507,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
             self.write_logs(f"X*=\n{x}")
             self.write_logs(f"F*={_f}")
         self.write_logs(f"完成：共轭方向法完成.")
-        self.res = [x , f]
-        return self.res
+        res = [x , f , step]
+        self.res = self.Result(res[0] , res[1] , res[2])
+        return res
 
     def powell_method(self):
         # 构造初始优化方向
@@ -588,8 +597,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
             if dx < self.epsilonx or df < self.epsilonf:
                 break
         self.write_logs(f"完成：powell法优化完成.")
-        self.res = [x , fMin]
-        return self.res
+        res = [x , fMin , step]
+        self.res = self.Result(res[0] , res[1] , res[2])
+        return res
 
     def quasi_newton(self , method=MethodType.dfp):
         step = 1
@@ -660,8 +670,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
             if abs(a) < self.epsilonx and abs((f-f0)) < self.epsilonf:
                 break
         self.write_logs(f"完成：dfp/bfgs优化完成")
-        self.res = [x , f]
-        return self.res
+        res = [x , f , step]
+        self.res = self.Result(res[0] , res[1] , res[2])
+        return res
 
     def solve(self , method=MethodType.coordinateDescent):
         if method == MethodType.coordinateDescent:
@@ -688,10 +699,14 @@ class MultidimensionOptimization(OnedimensionOptimization):
 
 
 if __name__ == "__main__":
-    print("==========")
+    print("Decimal精度：" , end="")
+    print(getcontext().prec)  # 默认输出 28
+    print()
     print("这是无约束优化的测试程序.")
+    print()
     # 寻找区间测试
     print("寻找搜索区间测试")
+    print()
     function = MathFunction(polynomial="3*x1^3 - 8*x1 + 9")
 
 # 黄金分割测试
@@ -704,14 +719,14 @@ if __name__ == "__main__":
         0.15,
     )
     q.searchInterval = [Decimal(-3) , Decimal(5)]
-    print(q.solve(MethodType.goldenSection))
-    q.clean_logs()
+    q.solve(MethodType.goldenSection)
+    print(q.res)
 # 二次插值测试 
     print("二次插值测试")
     q.searchInterval = [Decimal(-3) , Decimal(5)]
-    print(q.solve(MethodType.quadraticInterpolation))
+    q.solve(MethodType.quadraticInterpolation)
+    print(q.res)
 
-    print(q.read_logs())
 # 坐标轮换测试
     print("坐标轮换法测试.")
     q = MultidimensionOptimization(
@@ -720,8 +735,8 @@ if __name__ == "__main__":
         0.01,
         0.01
     )
-    res = q.solve()
-    print(res)
+    q.solve()
+    print(q.res)
 
 
     q = MultidimensionOptimization(
@@ -730,7 +745,7 @@ if __name__ == "__main__":
         0.01,
         0.01
     )
-    print(q.solve(method=MethodType.gradientDescent)[0])
+    q.solve(method=MethodType.gradientDescent)
     print(q.res)
 
 # 阻尼牛顿法
@@ -741,7 +756,8 @@ if __name__ == "__main__":
         0.01,
         0.01
     )
-    print(q.solve(method=MethodType.dampedNewton)[0])
+    q.solve(method=MethodType.dampedNewton)
+    print(q.res)
 
 # 共轭方向法
     print("共轭方向法测试")
@@ -752,9 +768,8 @@ if __name__ == "__main__":
         0.01
     )
     q.oneDimensionProblemMethod = MethodType.quadraticInterpolation
-    res = q.solve(method=MethodType.conjugateDirection)
-    print(res)
-    print(res[0])
+    q.solve(method=MethodType.conjugateDirection)
+    print(q.res)
 
 # powell
     print("powell法测试")
@@ -764,8 +779,8 @@ if __name__ == "__main__":
         0.001,
         0.001
     )
-    print(q.solve(method=MethodType.powell))
-    print(q.res[0]) 
+    q.solve(method=MethodType.powell)
+    print(q.res)
 
 # dfp
     print("dfp法测试")
@@ -776,6 +791,9 @@ if __name__ == "__main__":
         0.01
     )
     # q.oneDimensionProblemMethod=MethodType.quadraticInterpolation
-    print(q.solve(method=MethodType.bfgs))
-    print(q.res[0])
-    print(q.read_logs())
+    q.solve(method=MethodType.dfp)
+    print(q.res)
+    print("bfgs法测试")
+    q.solve(method=MethodType.bfgs)
+    print(q.res)
+
