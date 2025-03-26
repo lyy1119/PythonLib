@@ -353,19 +353,23 @@ class MultidimensionOptimization(OnedimensionOptimization):
         return self.res
 
     def powell_method(self):
+        # 构造初始优化方向
         ss = []
         for i in range(self.function.dimension):
             s = [[0] for _ in range(self.function.dimension)]
             s[i] = [1]
             s = MathFunction.DecimalMatrix(s)
             ss.append(s)
-        k = 0
+        # 
+        round = 0
         step = 0
+        # 优化开始
         while True:
-            k = k + 1
+            round = round + 1
             # 本轮的起始点x0
             x0 = self.x0
             fList = [self.function.evaluate(x0)]
+            # 本轮优化，以优化列表中的方向优化
             for _s in ss:
                 self.set_s(_s)
                 a , x , f = super().solve(self.oneDimensionProblemMethod)
@@ -373,13 +377,18 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 self.set_x0_from_decimal_matrix(x)
                 fList.append(f)
                 step = step + 1
+
+            # 计算共轭方向
             s = x - x0
+
+            # 计算x3
             x3 = 2*x - x0
             f1 = self.function.evaluate(x0)
             # f2 = self.function.evaluate(x)
             # 此时x就是f对应的点
             f2 = fMin
             f3 = self.function.evaluate(x3)
+
             # 计算delta_m
             deltaM = fList[0] - fList[1]
             m = 0
@@ -388,6 +397,8 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 if temp > deltaM:
                     deltaM = temp
                     m = i-1
+
+            # 是否替换判据
             if f3 < f1 and (f1 - 2*f2 + f3)*(f1-f2-deltaM)**2 < Decimal("0.5")*deltaM*(f1-f3)**2:
                 self.set_s(s)
                 a , x , fMin = super().solve(self.oneDimensionProblemMethod)
@@ -408,7 +419,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             df = abs((f1-f2)/f1)
             if dx < self.epsilonx or df < self.epsilonf:
                 break
-        self.res = [x , fMin , k , step]
+        self.res = [x , fMin]
         return self.res
 
     def quasi_newton(self , method=MethodType.dfp):
@@ -437,14 +448,22 @@ class MultidimensionOptimization(OnedimensionOptimization):
             deltaG = g - g0
             transposeDeltaX = transpose(deltaX)
             transposeDeltaG = transpose(deltaG)
+
+            # 计算修正矩阵
+            # dfp法
             if method == MethodType.dfp:
                 e = (deltaX*transposeDeltaX)/((transposeDeltaX*deltaG).frobenius_norm()) - (inversH*deltaG*transposeDeltaG*inversH)/((transposeDeltaG*inversH*deltaG).frobenius_norm())
+            # bfgs法
             elif method == MethodType.bfgs:
                 tX = transpose(x)
                 e = (deltaX * transposeDeltaX + ((transposeDeltaG*inversH*deltaG).frobenius_norm()*deltaX*transposeDeltaX)/((transposeDeltaX*deltaG).frobenius_norm()) - inversH*deltaG*transposeDeltaX - deltaX*transposeDeltaG*inversH)/((tX*deltaG).frobenius_norm())
+            
+            # 计算新的h矩阵
             inversH = inversH + e
+            # 计算新的方向s
             s = - inversH * g
             self.set_s(s)
+            # 将此轮的数值记录在“上一轮变量”
             x0 = x
             g0 = g
             f0 = f
