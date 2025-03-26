@@ -7,7 +7,7 @@ from copy import deepcopy
 from decimal import Decimal, getcontext
 from datetime import datetime
 
-getcontext().prec = 50  # 设置更高的精度
+# getcontext().prec = 50  # 设置更高的精度
 
 
 class MethodType(Enum):
@@ -314,37 +314,36 @@ class OnedimensionOptimization(Problem):
         s: 搜索方向
         return [a: Decimal , b: Decimal]
         '''
-        step = Decimal(1) # 步长
-        from collections import deque
-        queue = deque()
-        queue.append([Decimal(0) , None , None])
-        queue.append([step , None , None])
-
-        while True:
-            self.evaluate_point(queue)
-            if queue[1][2] > queue[0][2]: # F2 > F1
-                step = -step/Decimal(2) # 步长反向并缩小
-                queue.pop() # 将原A2从末尾出队
-                nextPoint = [queue[0][0]+step , None , None]
-                queue.append(nextPoint)
-            else:
+        step = Decimal(str(self.epsilonx))/Decimal(100) # 步长
+        a1 = 0
+        a2 = step
+        f1 = self.function.evaluate(self.x0)
+        x = self.x0 + a2*self.s
+        f2 = self.function.evaluate(x)
+        if f2 < f1:
+            while True:
                 step = step * 2
-                break
-
-
-        while True: # 进退法
-            nextPoint = [queue[-1][0]+step , None , None]
-            if len(queue) == 3:
-                queue.popleft()
-            queue.append(nextPoint)
-            self.evaluate_point(queue)
-            step = step * 2
-            if len(queue) == 3 and (queue[0][2] >= queue[1][2] and queue[2][2] >= queue[1][2]):
-                break
-
-        res = list(queue)[0:3:2]
-        res.sort(key=lambda x: x[0])
-        return [i[0] for i in res]
+                a2 = a2 + step
+                f1 = f2
+                x = self.x0 + a2*self.s
+                f2 =  self.function.evaluate(x)
+                if f1 > f2:
+                    a1 = a2 - step
+                else:
+                    break
+        else:
+            step = -step
+            while True:
+                a1 = a1 + step
+                f2 = f1
+                x = self.x0 + a1*self.s
+                f1 = self.function.evaluate(x)
+                if f2 > f1:
+                    a2 = a1 - step
+                    step = step * 2
+                else:
+                    break
+        return a1 , a2
 
 
 class MultidimensionOptimization(OnedimensionOptimization):
@@ -732,8 +731,8 @@ if __name__ == "__main__":
     q = MultidimensionOptimization(
         "4 + 4.5*x1 - 4*x2 + x1^2 + 2*x2^2 - 2*x1*x2 + x1^4 - 2*x1^2*x2",
         [0 , 0],
-        0.01,
-        0.01
+        0.1,
+        0.1
     )
     q.solve()
     print(q.res)
@@ -776,8 +775,8 @@ if __name__ == "__main__":
     q = MultidimensionOptimization(
         "11*x1^2 + 11*x2^2 + 18*x1*x2 - 100*x1 - 100*x2 + 250",
         [0 , 0],
-        0.001,
-        0.001
+        0.01,
+        0.01
     )
     q.solve(method=MethodType.powell)
     print(q.res)
@@ -787,7 +786,7 @@ if __name__ == "__main__":
     q = MultidimensionOptimization(
         "4*x1^2 + x2^2 - 40*x1 - 12*x2 + 136",
         [8 , 9],
-        0.01,
+        0.001,
         0.01
     )
     # q.oneDimensionProblemMethod=MethodType.quadraticInterpolation
