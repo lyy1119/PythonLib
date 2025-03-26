@@ -24,12 +24,28 @@ class MethodType(Enum):
     dfp = 8
     bfgs = 9
 
+outputAccuracy = 5
+
 class Problem:
     class Result:
-        def __init__(self , item: dict):
-            pass
+        def __init__(self , X: MathFunction.DecimalMatrix , F: Decimal):
+            self.realX = X
+            self.realF = F
+            self.outputF = deepcopy(F)
+            self.outputF.quantize(Decimal("0.1")**outputAccuracy)
+            self.outputX = deepcopy(X)
+            for row in self.outputX:
+                for i in row:
+                    i.quantize(Decimal("0.1")**outputAccuracy)
         def __str__(self):
-            pass
+            s = ''
+            s += "=============================\n"
+            s += "优化结果\n"
+            s += "X=\n"
+            s +=f"{self.outputX}\n"
+            s +=f"函数值F={self.outputF}\n"
+            s += "=============================\n"
+            return s
     def __init__(self , function: str , x0: list , maxStep=1000):
         '''
         function = x1^1 + 3*x2^2 + ...
