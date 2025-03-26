@@ -269,18 +269,18 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 _a , x , f = super().solve(method=self.oneDimensionProblemMethod)
                 a = max(a , abs(_a))
                 self.set_x0_from_decimal_matrix(x)
-            if step >= self.maxStep:
-                raise ValueError("迭代达到最大步长.")
             if abs(a) <= self.epsilonx:
                 break
+            if step >= self.maxStep:
+                raise ValueError(f"迭代达到最大步长.最后的优化步a={a}")
         self.res = [self.x0 , f]
         return self.res
 
-    def gradient_descent(self , epsilon , maxStep=1000):
+    def gradient_descent(self):
         step = 0
         x = self.x0
-        f = self.function.evaluate(x)
         while True:
+            step = step + 1
             g = self.function.evaluate_gradient(x)
             gNorm = g.frobenius_norm()
             if gNorm == 0:
@@ -289,14 +289,13 @@ class MultidimensionOptimization(OnedimensionOptimization):
             sMatrix = (- g / gNorm)
             self.set_s(sMatrix)
             # 调用父类一维优化
-            _ , x , f = super().solve(self.oneDimensionProblemMethod , maxStep)
+            _ , x , f = super().solve(self.oneDimensionProblemMethod)
             self.set_x0_from_decimal_matrix(x)
-            if abs(gNorm) <= epsilon:
+            if abs(gNorm) <= self.epsilonx:
                 break
-            step = step + 1
-            if step > maxStep:
+            if step > self.maxStep:
                 break
-        self.res = [x , f , step]
+        self.res = [x , f]
         return self.res
 
     def damped_newton(self , epsilon , maxStep=1000):
