@@ -1,5 +1,5 @@
-from mathFunction import MathFunction
-from mathFunction import transpose
+from .mathFunction import MathFunction
+from .mathFunction import transpose
 from decimal import Decimal
 from enum import Enum
 from collections import deque
