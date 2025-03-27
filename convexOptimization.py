@@ -536,7 +536,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 step = step + 1
                 self.write_logs(f"迭代： 第{round}轮 ， 第{step}次")
                 self.write_logs(f"优化方向：")
-                self.write_logs(f"S={s}")
+                self.write_logs(f"S={_s}")
                 self.write_logs(f"本轮优化结果：")
                 self.write_logs(f"A={a}")
                 self.write_logs(f"X*=\n{x}")
