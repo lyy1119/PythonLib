@@ -57,6 +57,14 @@ class Problem:
         self.maxStep = maxStep
         self.logs = "" # 日志
         self.output = 3
+        self.outputIndent = 0
+
+    def add_log_indent(self):
+        self.outputIndent += 1
+
+    def reduce_log_indent(self):
+        if self.outputIndent >= 1:
+            self.outputIndent -= 1
 
     def set_output_accuracy(self , prec: int):
         self.output = prec
@@ -68,6 +76,8 @@ class Problem:
         return deepcopy(self.logs)
 
     def write_logs(self , s: str):
+        s = s.split("\n")
+        s =  '\n'.join('> ' * (self.outputIndent) + line for line in s)
         self.logs = self.logs + s + "\n"
 
     def set_x0_from_list(self , x0):
@@ -377,9 +387,11 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 s = [0 for _ in range(dimension)]
                 s[i] = 1
                 self.set_s(s)
-                _a , x , f = super().solve(method=self.oneDimensionProblemMethod)
                 self.write_logs(f"迭代：{step}")
                 self.write_logs(f"优化方向：\n{s}")
+                self.add_log_indent()
+                _a , x , f = super().solve(method=self.oneDimensionProblemMethod)
+                self.reduce_log_indent()
                 self.write_logs(f"本次迭代优化结果：\n")
                 self.write_logs(f"步长a={_a}")
                 self.write_logs(f"X*=\n{x}")
@@ -413,7 +425,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
             self.write_logs(f"搜索方向为：\n{sMatrix}")
             self.set_s(sMatrix)
             # 调用父类一维优化
+            self.add_log_indent()
             a , x , f = super().solve(self.oneDimensionProblemMethod)
+            self.reduce_log_indent()
             self.write_logs(f"本次迭代优化结果：")
             self.write_logs(f"a={a}")
             self.write_logs(f"X*=\n{x}")
@@ -444,7 +458,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
             self.write_logs(f"优化方向S=\n{s}")
             self.set_s(s)
             # 一维优化求步长
+            self.add_log_indent()
             a , x , f = super().solve(self.oneDimensionProblemMethod)
+            self.reduce_log_indent()
             self.write_logs(f"本次迭代优化结果：")
             self.write_logs(f"A={a}")
             self.write_logs(f"X*=\n{x}")
@@ -479,12 +495,14 @@ class MultidimensionOptimization(OnedimensionOptimization):
             x0 = self.x0
             for s in ss:
                 self.set_s(s)
-                _a , x , _f = super().solve(method=self.oneDimensionProblemMethod)
-                self.set_x0_from_decimal_matrix(x)
                 step += 1
                 self.write_logs(f"迭代：第{round}轮， 第{step}步")
                 self.write_logs(f"优化方向：")
                 self.write_logs(f"S=\n{s}")
+                self.add_log_indent()
+                _a , x , _f = super().solve(method=self.oneDimensionProblemMethod)
+                self.set_x0_from_decimal_matrix(x)
+                self.reduce_log_indent()
                 self.write_logs(f"本次迭代优化结果：")
                 self.write_logs(f"A={_a}")
                 self.write_logs(f"X*=\n{x}")
@@ -495,12 +513,14 @@ class MultidimensionOptimization(OnedimensionOptimization):
             ss.append(s)
 
             self.set_s(s)
-            _a , x , f = super().solve(self.oneDimensionProblemMethod)
-            self.set_x0_from_decimal_matrix(x)
             step = step + 1
             self.write_logs(f"迭代：第{round}轮， 第{step}步")
             self.write_logs(f"优化方向(新的方向)：")
             self.write_logs(f"S=\n{s}")
+            self.add_log_indent()
+            _a , x , f = super().solve(self.oneDimensionProblemMethod)
+            self.reduce_log_indent()
+            self.set_x0_from_decimal_matrix(x)
             self.write_logs(f"本次迭代优化结果：")
             self.write_logs(f"A={_a}")
             self.write_logs(f"X*=\n{x}")
@@ -529,14 +549,16 @@ class MultidimensionOptimization(OnedimensionOptimization):
             # 本轮优化，以优化列表中的方向优化
             for _s in ss:
                 self.set_s(_s)
-                a , x , f = super().solve(self.oneDimensionProblemMethod)
-                fMin = f
-                self.set_x0_from_decimal_matrix(x)
-                fList.append(f)
                 step = step + 1
                 self.write_logs(f"迭代： 第{round}轮 ， 第{step}次")
                 self.write_logs(f"优化方向：")
                 self.write_logs(f"S={_s}")
+                self.add_log_indent()
+                a , x , f = super().solve(self.oneDimensionProblemMethod)
+                fMin = f
+                self.reduce_log_indent()
+                self.set_x0_from_decimal_matrix(x)
+                fList.append(f)
                 self.write_logs(f"本轮优化结果：")
                 self.write_logs(f"A={a}")
                 self.write_logs(f"X*=\n{x}")
@@ -569,8 +591,10 @@ class MultidimensionOptimization(OnedimensionOptimization):
                 self.write_logs(f"需要替换方向")
                 self.set_s(s)
                 self.write_logs(f"新的方向为S:\n{s}")
+                self.add_log_indent()
                 a , x , fMin = super().solve(self.oneDimensionProblemMethod)
                 f2 = fMin
+                self.reduce_log_indent()
                 self.write_logs(f"新方向的优化结果：")
                 self.write_logs(f"A={a}")
                 self.write_logs(f"X*={x}")
@@ -615,9 +639,11 @@ class MultidimensionOptimization(OnedimensionOptimization):
         s = -inversH * g
         self.set_s(s)
         x0 = x
-        a , x , f = super().solve(self.oneDimensionProblemMethod)
         self.write_logs(f"迭代：1，使用负梯度方向优化")
         self.write_logs(f"优化方向S:\n{s}")
+        self.add_log_indent()
+        a , x , f = super().solve(self.oneDimensionProblemMethod)
+        self.reduce_log_indent()
         self.write_logs(f"优化结果:\n")
         self.write_logs(f"A={a}")
         self.write_logs(f"X*=\n{x}")
@@ -660,7 +686,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
             x0 = x
             g0 = g
             f0 = f
+            self.add_log_indent()
             a , x , f = super().solve(self.oneDimensionProblemMethod)
+            self.reduce_log_indent()
             self.write_logs(f"本次迭代搜索结果:")
             self.write_logs(f"A={a}")
             self.write_logs(f"X*=\n{x}")

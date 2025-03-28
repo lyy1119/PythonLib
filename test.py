@@ -230,6 +230,7 @@ def test_convexOptimization():
     q.oneDimensionProblemMethod = MethodType.quadraticInterpolation
     q.solve(method=MethodType.conjugateDirection)
     print(q.res)
+    print(q.read_logs())
 
 # powell
     print("powell法测试")
