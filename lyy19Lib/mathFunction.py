@@ -411,4 +411,8 @@ class MathFunction:
 
 class ExtendedMathFunction(MathFunction):
     def __init__(self, polynomial, rawMode=False, raw={}):
+        if not rawMode:
+            # 拆解字符串
+            # 以+ - 号拆解
+            pass
         super().__init__(polynomial, rawMode, raw)
