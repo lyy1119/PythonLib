@@ -129,6 +129,38 @@ class MathFunction:
         else:
             raise ValueError("类MathFunction没有被正确地初始化.")
 
+    def __mul__(self , other):
+        from copy import deepcopy
+        func = deepcopy(self.func)
+        dimension = self.dimension
+        t = type(other)
+        if t == Decimal:
+            for key in func.keys():
+                func[key] = func[key]*other
+            result = MathFunction("" , rawMode=True ,raw={"func":func , "dimension":dimension})
+            return result
+        elif t == MathFunction:
+            # 将两者的func交叉相乘
+            # dimension为最大者
+            dimension = max(dimension , other.dimesion)
+            newFunc = {}
+            for keyA , valueA in func.items():
+                for keyB , valueB in other.func.items():
+                    if len(keyA) > len(keyB):
+                        newKey = list(keyA)
+                        for index , i in enumerate(keyB):
+                            newKey[index] += i
+                    else:
+                        newKey = list(keyB)
+                        for index , i in enumerate(keyA):
+                            newKey[index] += i
+                    newValue = valueA*valueB
+                    if newKey in newFunc.keys():
+                        newFunc[newKey] += newValue
+                    else:
+                        newFunc[newKey] = newValue
+            result = MathFunction("" , rawMode=True , raw={"func":newFunc , "dimension":dimension})
+
     @staticmethod
     def raw_column_matrix_x_to_list(rowMatrix: list):
         '''
