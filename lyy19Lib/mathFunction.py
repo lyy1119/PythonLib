@@ -408,3 +408,7 @@ class MathFunction:
             self.hessian_matrix()
         res = [[self.hessianMatrix.data[i][j].evaluate(x) for j in range(self.dimension)] for i in range(self.dimension)]
         return MathFunction.DecimalMatrix(res)
+
+class ExtendedMathFunction(MathFunction):
+    def __init__(self, polynomial, rawMode=False, raw={}):
+        super().__init__(polynomial, rawMode, raw)
