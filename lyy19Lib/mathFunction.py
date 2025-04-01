@@ -134,7 +134,8 @@ class MathFunction:
         func = deepcopy(self.func)
         dimension = self.dimension
         t = type(other)
-        if t == Decimal:
+        if t == Decimal or t == int or t == float:
+            other = Decimal(str(other))
             for key in func.keys():
                 func[key] = func[key]*other
             result = MathFunction("" , rawMode=True ,raw={"func":func , "dimension":dimension})
@@ -142,7 +143,7 @@ class MathFunction:
         elif t == MathFunction:
             # 将两者的func交叉相乘
             # dimension为最大者
-            dimension = max(dimension , other.dimesion)
+            dimension = max(dimension , other.dimension)
             newFunc = {}
             for keyA , valueA in func.items():
                 for keyB , valueB in other.func.items():
@@ -155,11 +156,16 @@ class MathFunction:
                         for index , i in enumerate(keyA):
                             newKey[index] += i
                     newValue = valueA*valueB
-                    if newKey in newFunc.keys():
+                    newKey = tuple(newKey)
+                    if newKey in tuple(newFunc.keys()):
                         newFunc[newKey] += newValue
                     else:
                         newFunc[newKey] = newValue
             result = MathFunction("" , rawMode=True , raw={"func":newFunc , "dimension":dimension})
+            return result
+    
+    def __rmul__(self , other):
+        return self.__mul__(other)
 
     @staticmethod
     def raw_column_matrix_x_to_list(rowMatrix: list):

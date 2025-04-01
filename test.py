@@ -158,6 +158,28 @@ def test_mathfunction():
     print("-a:")
     print(-a)
 
+    print()
+
+    print("（12）测试mathfunction的乘法运算")
+    fa = MathFunction("x1^2 + 2*x2")
+    print(f"fa = {fa}")
+    fb = MathFunction("2 + x3^5 - x1 + 4*x4^(-1)")
+    print(f"fb = {fb}")
+    print("f = fa*fb")
+    print(fa*fb)
+
+    print()
+
+    fa = MathFunction("x1+x2")
+    print(f"fa = {fa}")
+    print("f = fa*fa")
+    print(fa*fa)
+
+    print()
+
+    print(f"5*fa")
+    print(5*fa)
+
 def test_convexOptimization():
     print("Decimal精度：" , end="")
     print(getcontext().prec)  # 默认输出 28
