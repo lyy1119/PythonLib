@@ -179,6 +179,18 @@ def test_mathfunction():
 
     print(f"5*fa")
     print(5*fa)
+    print(f"函数维度:{(5*fa).dimension}")
+
+    print()
+
+    print("（13）测试函数加法")
+    fa = MathFunction("x1+x2^2+3")
+    fb = MathFunction("4-x1+x2^2+x6^2")
+    print(f"fa = {fa}")
+    print(f"fb = {fb}")
+    print(f"fa + fb = {fa+fb}")
+    print(f"维度:{(fa+fb).dimension}")
+
 
 def test_convexOptimization():
     print("Decimal精度：" , end="")

@@ -168,7 +168,19 @@ class MathFunction:
         return self.__mul__(other)
     
     def __add__(self , other):
-        pass
+        if type(other) != MathFunction:
+            raise ValueError("加法运算操作对象不是MathFunction类型")
+        from copy import deepcopy
+        newFunc = deepcopy(self.func)
+        for key , value in other.func.items():
+            if key in newFunc:
+                newFunc[key] += value
+            else:
+                newFunc[key] = value
+            if newFunc[key] == 0:
+                del newFunc[key]
+        result = MathFunction("" , rawMode=True , raw={"func": newFunc , "dimension":max(self.dimension , other.dimension)})
+        return result
 
     @staticmethod
     def raw_column_matrix_x_to_list(rowMatrix: list):
