@@ -17,6 +17,7 @@ x1^2 - 8 + 5*x2^7*x1^2 + x1^(-5) + x5
 from decimal import Decimal
 from .genericClass import Matrix as GenericMatrix
 from .genericClass import transpose
+from .genericClass import Fraction as GenericFraction
 
 class MathFunction:
     class DecimalMatrix(GenericMatrix):
@@ -520,3 +521,7 @@ class ExtendedMathFunction(MathFunction):
         for i in range(1 , len(li)):
             res += li[i]
         return res
+
+class FractionFunction(GenericFraction):
+    def __init__(self, numerator, denominator):
+        super().__init__(numerator, denominator)
