@@ -227,6 +227,8 @@ class MathFunction:
             value = None
             rawKey = []
             for i in monomial:
+                if not i:
+                    continue
                 parse = MathFunction.parse_monomial(i)
                 if parse["type"] == MathFunction.ParseType.coefficient:
                     value = Decimal(parse["data"])
@@ -289,7 +291,8 @@ class MathFunction:
                         else:
                             monomial[-1] = monomial[-1] + j
                 # 单项式解析完毕
-                res.append(monomial)
+                if monomial != [""]:
+                    res.append(monomial)
             # 将正负号也进栈,左右括号不进栈
             if i == '(':
                 filtered = True
@@ -415,10 +418,9 @@ class ExtendedMathFunction(MathFunction):
             # 拆解字符串
             # 以+ - 号拆解
             func = self.__decode_to_list(polynomial)
-            print(func)
-            input()
-            super().__init__("" , rawMode=True , raw={"func": func , "dimension": func.dimension})
-        super().__init__(polynomial, rawMode, raw)
+            super().__init__("" , rawMode=True , raw={"func": func.func , "dimension": func.dimension})
+        else:
+            super().__init__(polynomial, rawMode, raw)
     
     def __decode_to_list(self , str):
         from collections import deque
@@ -432,7 +434,7 @@ class ExtendedMathFunction(MathFunction):
             elif i == "]" or i == ")":
                 sign -= 1
             # 当不在括号中且当前字符等于-或+
-            if sign == 0 and (i == "+" or i == "-"):
+            if sign == 0 and (i == "+" or i == "-") and li[-1]:
                 # 是一个新的单项式或多项式
                 li.append("")
             # 将内容加到li中
@@ -444,7 +446,6 @@ class ExtendedMathFunction(MathFunction):
             if "[" in i:
                 # - 解析为 -1 * , + 不解析
                 originQue = deque(i)
-                print(f"originQue={originQue}")
                 optQue = deque()
                 if originQue[0] in "-+" and (not originQue[1].isnumeric()):
                     # 第一个是-或者+号，且第二个不是数字
@@ -456,7 +457,6 @@ class ExtendedMathFunction(MathFunction):
                 # 将字符串解析为一系列操作
                 while originQue:
                     item = originQue.popleft()
-                    print(item)
                     if item == "[": # 多项式相乘的开始
                         # 将多项式作为单独的变量
                         s = ''
@@ -469,41 +469,41 @@ class ExtendedMathFunction(MathFunction):
                         # 将^加入，后面应该是全数字，直接加入直到不是数字 （不允许负数）
                         optQue.append(item)
                         s = ""
-                        while originQue[0].isnumeric():
+                        while originQue and originQue[0].isnumeric():
                             item = originQue.popleft()
                             s += item
                         optQue.append(s)
-                    else:
-                        optQue.append(item)
-                print(f"1. optQue={optQue}")
+                    else: # 只剩数字
+                        s = ''
+                        s += item # 先把第一个加进去，可能是-+ 也可能是数字
+                        while originQue and originQue[0].isnumeric(): # 直到originque为空或者不是数字
+                            s += originQue.popleft()
+                        optQue.append(s)
                 # 运算操作
                 # 先将函数初始化
-                for index , value in enumerate(optQue):
+                for _index , value in enumerate(optQue):
                     if value == "*" or value == "^": # 操作符不解析
                         pass
                     else:
-                        optQue[index] = MathFunction(optQue[index])
+                        optQue[_index] = MathFunction(value)
                 # 运算，先运算 ^
-                print(f"optQue = {optQue}")
                 interQue = deque()
                 while optQue:
                     item = optQue.popleft()
                     if item == "^":
-                        a = interQue.popleft()
-                        b = optQue.popleft() # b一定是数字 对于函数幂运算 不允许负次数
-                        b = Decimal(str(b))
+                        a = interQue.pop()
+                        b = optQue.popleft() # b是数字，但是已经转化为mathfunction类型了
+                        # 转换回纯数字 decimal
+                        b = b.func[()]
+                        b = int(b)
                         for _ in range(b-1):
                             a = a*a
-                            print(a)
                         interQue.append(a)
                     else:
                         interQue.append(item)
                 # 运算*
-                print("111:")
-                print(interQue)
                 res = interQue.popleft()
                 while interQue:
-                    print(interQue)
                     item = interQue.popleft()
                     if item == "*":
                         b = interQue.popleft()

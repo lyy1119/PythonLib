@@ -1,8 +1,14 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath("../my_lib"))  # 指向库所在目录
 # 库的测试程序
 
 from lyy19Lib import *
 from lyy19Lib.mathFunction import *
 from lyy19Lib.convexOptimization import *
+
+
 
 def test_mathfunction():
     print("这是MathFunction类库的测试单元！")
@@ -196,7 +202,7 @@ def test_mathfunction():
     print(f"s={s}")
     f = ExtendedMathFunction(s)
     print(f"f= {f}")
-    s = "[x1+1]^2"
+    s = "-2*[x1+1]^2"
     print(f"s={s}")
     f = ExtendedMathFunction(s)
     print(f"f= {f}")
