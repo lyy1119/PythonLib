@@ -414,5 +414,109 @@ class ExtendedMathFunction(MathFunction):
         if not rawMode:
             # 拆解字符串
             # 以+ - 号拆解
-            pass
+            func = self.__decode_to_list(polynomial)
+            print(func)
+            input()
+            super().__init__("" , rawMode=True , raw={"func": func , "dimension": func.dimension})
         super().__init__(polynomial, rawMode, raw)
+    
+    def __decode_to_list(self , str):
+        from collections import deque
+        que = deque(str)
+        li = [""] # 存储按照加减号分开的式子
+        sign = 0 # 记录是否在括号中
+        while que:
+            i = que.popleft()
+            if i == "[" or i == "(":
+                sign += 1
+            elif i == "]" or i == ")":
+                sign -= 1
+            # 当不在括号中且当前字符等于-或+
+            if sign == 0 and (i == "+" or i == "-"):
+                # 是一个新的单项式或多项式
+                li.append("")
+            # 将内容加到li中
+            li[-1] += i
+        # 现在li中存的是单个式子，如 x1 或 +x3 或者 -[x1+x2]^5
+        # 需要将 -[x1+x2]^5 解析成 -1 * x1+x2 ^ 5 并运算
+        for index , i in enumerate(li):
+            # 将没有[]的式子直接解析为函数
+            if "[" in i:
+                # - 解析为 -1 * , + 不解析
+                originQue = deque(i)
+                print(f"originQue={originQue}")
+                optQue = deque()
+                if originQue[0] in "-+" and (not originQue[1].isnumeric()):
+                    # 第一个是-或者+号，且第二个不是数字
+                    char = originQue.popleft()
+                    if char == "-": # 负号要转义
+                        optQue.append("-1")
+                        optQue.append("*")
+                    # else: # 是正号，不用解析，丢弃即可
+                # 将字符串解析为一系列操作
+                while originQue:
+                    item = originQue.popleft()
+                    print(item)
+                    if item == "[": # 多项式相乘的开始
+                        # 将多项式作为单独的变量
+                        s = ''
+                        item = originQue.popleft()
+                        while item != "]":
+                            s += item
+                            item = originQue.popleft()
+                        optQue.append(s)
+                    elif item == "^":
+                        # 将^加入，后面应该是全数字，直接加入直到不是数字 （不允许负数）
+                        optQue.append(item)
+                        s = ""
+                        while originQue[0].isnumeric():
+                            item = originQue.popleft()
+                            s += item
+                        optQue.append(s)
+                    else:
+                        optQue.append(item)
+                print(f"1. optQue={optQue}")
+                # 运算操作
+                # 先将函数初始化
+                for index , value in enumerate(optQue):
+                    if value == "*" or value == "^": # 操作符不解析
+                        pass
+                    else:
+                        optQue[index] = MathFunction(optQue[index])
+                # 运算，先运算 ^
+                print(f"optQue = {optQue}")
+                interQue = deque()
+                while optQue:
+                    item = optQue.popleft()
+                    if item == "^":
+                        a = interQue.popleft()
+                        b = optQue.popleft() # b一定是数字 对于函数幂运算 不允许负次数
+                        b = Decimal(str(b))
+                        for _ in range(b-1):
+                            a = a*a
+                            print(a)
+                        interQue.append(a)
+                    else:
+                        interQue.append(item)
+                # 运算*
+                print("111:")
+                print(interQue)
+                res = interQue.popleft()
+                while interQue:
+                    print(interQue)
+                    item = interQue.popleft()
+                    if item == "*":
+                        b = interQue.popleft()
+                        res = res * b
+                    else:
+                        raise ValueError(f"理论上应该只会遍历到*号，但是此处是{item}")
+                # 计算完毕
+                li[index] = res
+            else: # []不在i中
+                # 直接初始化为函数类型
+                li[index] = MathFunction(i)
+        # 将多项式相加
+        res = li[0]
+        for i in range(1 , len(li)):
+            res += li[i]
+        return res

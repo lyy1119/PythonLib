@@ -191,6 +191,15 @@ def test_mathfunction():
     print(f"fa + fb = {fa+fb}")
     print(f"维度:{(fa+fb).dimension}")
 
+    print("（14）测试不展开的函数式")
+    s = "[x1+x2]*[x3+x4]"
+    print(f"s={s}")
+    f = ExtendedMathFunction(s)
+    print(f"f= {f}")
+    s = "[x1+1]^2"
+    print(f"s={s}")
+    f = ExtendedMathFunction(s)
+    print(f"f= {f}")
 
 def test_convexOptimization():
     print("Decimal精度：" , end="")
