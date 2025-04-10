@@ -18,6 +18,7 @@ from decimal import Decimal
 from .genericClass import Matrix as GenericMatrix
 from .genericClass import transpose
 from .genericClass import Fraction as GenericFraction
+from collections import deque
 
 class MathFunction:
     class DecimalMatrix(GenericMatrix):
@@ -423,23 +424,35 @@ class ExtendedMathFunction(MathFunction):
         else:
             super().__init__(polynomial, rawMode, raw)
     
-    def __decode_to_list(self , str):
-        from collections import deque
+    @staticmethod
+    def divide_by_plus_minus(str) -> list:
+        '''
+        input: str = "x1+x2+[x1+x2]^2+[x1+[x2+x3]^2]*[x3+4]"
+        output: li = [ "x1" , "x2" , "[x1+x2]^2" , "[x1+[x2+x3]^2]*[x3+4]" ]
+        '''
+        result = [""]
         que = deque(str)
-        li = [""] # 存储按照加减号分开的式子
-        sign = 0 # 记录是否在括号中
+        skipSign = 0 # 记录当前位置是否在括号中
         while que:
             i = que.popleft()
             if i == "[" or i == "(":
-                sign += 1
+                skipSign += 1
             elif i == "]" or i == ")":
-                sign -= 1
+                skipSign -= 1
             # 当不在括号中且当前字符等于-或+
-            if sign == 0 and (i == "+" or i == "-") and li[-1]:
+            if skipSign == 0 and (i == "+" or i == "-") and result[-1]:
                 # 是一个新的单项式或多项式
-                li.append("")
+                result.append("")
             # 将内容加到li中
-            li[-1] += i
+            result[-1] += i
+        return result
+    
+    @staticmethod
+    def decode_folded_monomial(str):
+        pass
+
+    def __decode_to_list(self , str):
+        li = self.divide_by_plus_minus(str)
         # 现在li中存的是单个式子，如 x1 或 +x3 或者 -[x1+x2]^5
         # 需要将 -[x1+x2]^5 解析成 -1 * x1+x2 ^ 5 并运算
         for index , i in enumerate(li):
