@@ -250,7 +250,10 @@ class MathFunction:
             if value == None: # 没有解析到系数
                 # 当系数为1时不用写系数
                 value = Decimal(1)
-            res[key] = value
+            if key in res.keys():
+                res[key] += value
+            else:
+                res[key] = value
         return res
 
     def __string_to_polynomial(self , s: str):
