@@ -448,8 +448,51 @@ class ExtendedMathFunction(MathFunction):
         return result
     
     @staticmethod
-    def decode_folded_monomial(str):
-        pass
+    def decode_folded_monomial(s: str):
+        '''
+        input: s= "-[x1+x2]^2" 或者 "-[x1+[x2+x3]]^2" 等
+        output:  deque()
+        '''
+        originQue = deque(s)
+        optQue = deque()
+        if originQue[0] in "-+" and (not originQue[1].isnumeric()):
+            # 第一个是-或者+号，且第二个不是数字
+            char = originQue.popleft()
+            if char == "-": # 负号要转义
+                optQue.append("-1")
+                optQue.append("*")
+            # else: # 是正号，不用解析，丢弃即可
+        # 将字符串解析为一系列操作,存储在操作队列中
+        while originQue:
+            item = originQue.popleft()
+            if item == "[": # 多项式相乘的开始 (可能是多重折叠)
+                sign = 1
+                # 将多项式作为单独的变量
+                s = ''
+                item = originQue.popleft()
+                while sign:
+                    s += item
+                    item = originQue.popleft()
+                    if item == "[":
+                        sign += 1
+                    elif item == ']':
+                        sign -= 1
+                optQue.append(s)
+            elif item == "^":
+                # 将^加入，后面应该是全数字，直接加入直到不是数字 （不允许负数）
+                optQue.append(item)
+                s = ""
+                while originQue and originQue[0].isnumeric():
+                    item = originQue.popleft()
+                    s += item
+                optQue.append(s)
+            else: # 只剩数字
+                s = ''
+                s += item # 先把第一个加进去，可能是-+ 也可能是数字
+                while originQue and originQue[0].isnumeric(): # 直到originque为空或者不是数字
+                    s += originQue.popleft()
+                optQue.append(s)
+        return optQue
 
     def __decode_to_list(self , str):
         li = self.divide_by_plus_minus(str)
@@ -458,48 +501,17 @@ class ExtendedMathFunction(MathFunction):
         for index , i in enumerate(li):
             # 将没有[]的式子直接解析为函数
             if "[" in i:
-                # - 解析为 -1 * , + 不解析
-                originQue = deque(i)
-                optQue = deque()
-                if originQue[0] in "-+" and (not originQue[1].isnumeric()):
-                    # 第一个是-或者+号，且第二个不是数字
-                    char = originQue.popleft()
-                    if char == "-": # 负号要转义
-                        optQue.append("-1")
-                        optQue.append("*")
-                    # else: # 是正号，不用解析，丢弃即可
-                # 将字符串解析为一系列操作
-                while originQue:
-                    item = originQue.popleft()
-                    if item == "[": # 多项式相乘的开始
-                        # 将多项式作为单独的变量
-                        s = ''
-                        item = originQue.popleft()
-                        while item != "]":
-                            s += item
-                            item = originQue.popleft()
-                        optQue.append(s)
-                    elif item == "^":
-                        # 将^加入，后面应该是全数字，直接加入直到不是数字 （不允许负数）
-                        optQue.append(item)
-                        s = ""
-                        while originQue and originQue[0].isnumeric():
-                            item = originQue.popleft()
-                            s += item
-                        optQue.append(s)
-                    else: # 只剩数字
-                        s = ''
-                        s += item # 先把第一个加进去，可能是-+ 也可能是数字
-                        while originQue and originQue[0].isnumeric(): # 直到originque为空或者不是数字
-                            s += originQue.popleft()
-                        optQue.append(s)
+                # 将折叠的单项式展开为操作： [ "-1" , "*" , "[" , "x1" , "+" , "x2" , "]" "^" , "2" ]
+                optQue = self.decode_folded_monomial(i)
                 # 运算操作
                 # 先将函数初始化
+                print(optQue)
+                input()
                 for _index , value in enumerate(optQue):
                     if value == "*" or value == "^": # 操作符不解析
                         pass
                     else:
-                        optQue[_index] = MathFunction(value)
+                        optQue[_index] = ExtendedMathFunction(value)
                 # 运算，先运算 ^
                 interQue = deque()
                 while optQue:
