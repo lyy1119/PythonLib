@@ -513,6 +513,34 @@ class ExtendedMathFunction(MathFunction):
                 optQue.append(s)
         return optQue
 
+    @staticmethod
+    def unfold(optQue) -> MathFunction:
+        interQue = deque()
+        while optQue:
+            item = optQue.popleft()
+            if item == "^":
+                a = interQue.pop()
+                b = optQue.popleft() # b是数字，但是已经转化为mathfunction类型了
+                # 转换回纯数字 decimal
+                b = b.func[()]
+                b = int(b)
+                for _ in range(b-1):
+                    a = a*a
+                interQue.append(a)
+            else:
+                interQue.append(item)
+        # 运算*
+        res = interQue.popleft()
+        while interQue:
+            item = interQue.popleft()
+            if item == "*":
+                b = interQue.popleft()
+                res = res * b
+            else:
+                raise ValueError(f"理论上应该只会遍历到*号，但是此处是{item}")
+        # 计算完毕
+        return res
+
     def __decode_to_list(self , str):
         li = self.divide_by_plus_minus(str)
         # 现在li中存的是单个式子，如 x1 或 +x3 或者 -[x1+x2]^5
@@ -529,31 +557,8 @@ class ExtendedMathFunction(MathFunction):
                         pass
                     else:
                         optQue[_index] = ExtendedMathFunction(value)
-                # 运算，先运算 ^
-                interQue = deque()
-                while optQue:
-                    item = optQue.popleft()
-                    if item == "^":
-                        a = interQue.pop()
-                        b = optQue.popleft() # b是数字，但是已经转化为mathfunction类型了
-                        # 转换回纯数字 decimal
-                        b = b.func[()]
-                        b = int(b)
-                        for _ in range(b-1):
-                            a = a*a
-                        interQue.append(a)
-                    else:
-                        interQue.append(item)
-                # 运算*
-                res = interQue.popleft()
-                while interQue:
-                    item = interQue.popleft()
-                    if item == "*":
-                        b = interQue.popleft()
-                        res = res * b
-                    else:
-                        raise ValueError(f"理论上应该只会遍历到*号，但是此处是{item}")
-                # 计算完毕
+                # 运算
+                res = self.unfold(optQue=optQue)
                 li[index] = res
             else: # []不在i中
                 # 直接初始化为函数类型
