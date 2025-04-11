@@ -19,6 +19,7 @@ from .genericClass import Matrix as GenericMatrix
 from .genericClass import transpose
 from .genericClass import Fraction as GenericFraction
 from collections import deque
+from copy import deepcopy
 
 class MathFunction:
     class DecimalMatrix(GenericMatrix):
@@ -130,6 +131,9 @@ class MathFunction:
             return str
         else:
             raise ValueError("类MathFunction没有被正确地初始化.")
+    
+    def __repr__(self):
+        return str(self)
 
     def __mul__(self , other):
         from copy import deepcopy
@@ -142,7 +146,7 @@ class MathFunction:
                 func[key] = func[key]*other
             result = MathFunction("" , rawMode=True ,raw={"func":func , "dimension":dimension})
             return result
-        elif t == MathFunction:
+        elif isinstance(other , MathFunction): # 兼容子类
             # 将两者的func交叉相乘
             # dimension为最大者
             dimension = max(dimension , other.dimension)
@@ -170,9 +174,8 @@ class MathFunction:
         return self.__mul__(other)
     
     def __add__(self , other):
-        if type(other) != MathFunction:
-            raise ValueError("加法运算操作对象不是MathFunction类型")
-        from copy import deepcopy
+        if not isinstance(other , MathFunction):
+            raise ValueError(f"加法运算操作对象不是{type(self)}类型")
         newFunc = deepcopy(self.func)
         for key , value in other.func.items():
             if key in newFunc:
@@ -183,6 +186,9 @@ class MathFunction:
                 del newFunc[key]
         result = MathFunction("" , rawMode=True , raw={"func": newFunc , "dimension":max(self.dimension , other.dimension)})
         return result
+
+    def __sub__(self , other):
+        return self + other*(-1)
 
     @staticmethod
     def raw_column_matrix_x_to_list(rowMatrix: list):
@@ -422,11 +428,20 @@ class ExtendedMathFunction(MathFunction):
         if not rawMode:
             # 拆解字符串
             # 以+ - 号拆解
+            polynomial = self.filter_space(polynomial)
             func = self.__decode_to_list(polynomial)
             super().__init__("" , rawMode=True , raw={"func": func.func , "dimension": func.dimension})
         else:
             super().__init__(polynomial, rawMode, raw)
     
+    @staticmethod
+    def filter_space(s) -> str:
+        result = ""
+        for i in s:
+            if i != " ":
+                result += i
+        return result
+
     @staticmethod
     def divide_by_plus_minus(str) -> list:
         '''
@@ -472,14 +487,15 @@ class ExtendedMathFunction(MathFunction):
                 sign = 1
                 # 将多项式作为单独的变量
                 s = ''
-                item = originQue.popleft()
-                while sign:
-                    s += item
+                while True:
                     item = originQue.popleft()
                     if item == "[":
                         sign += 1
                     elif item == ']':
                         sign -= 1
+                        if sign == 0:
+                            break
+                    s += item
                 optQue.append(s)
             elif item == "^":
                 # 将^加入，后面应该是全数字，直接加入直到不是数字 （不允许负数）
@@ -508,8 +524,6 @@ class ExtendedMathFunction(MathFunction):
                 optQue = self.decode_folded_monomial(i)
                 # 运算操作
                 # 先将函数初始化
-                print(optQue)
-                input()
                 for _index , value in enumerate(optQue):
                     if value == "*" or value == "^": # 操作符不解析
                         pass
