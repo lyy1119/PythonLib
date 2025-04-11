@@ -22,6 +22,7 @@ from collections import deque
 from copy import deepcopy
 from math import sqrt
 from enum import Enum
+import math
 import re
 
 def divide_by_plus_minus(str) -> list:
@@ -370,6 +371,24 @@ class MathFunction:
             res = res + monomialRes
         return res
 
+    def derivative(self , xIndex: int):
+        rawData = {"dimension" : self.dimension , "func" : {}}
+        # index : 0 -> x1 , 1 -> x2  ,... ...
+        for powers , value in self.func.items():
+            if xIndex > len(powers) - 1: # 原powers的存储格式为 只存到编号最大的变量，故可能存的长度少于维度
+                continue # 跳过即可，因为求偏导为0
+            newValue = powers[xIndex] * value
+            if newValue == 0: # 求导结果为0
+                continue # 跳过
+            newPowers = list(powers)
+            newPowers[xIndex] = newPowers[xIndex] - 1
+            newPowers = tuple(newPowers)
+            rawData["func"][newPowers] = newValue
+        if rawData["func"] == {}: # 偏导为0
+            rawData["func"] = {():Decimal(0)}
+        newFunc = MathFunction("" , rawMode=True , raw=rawData)
+        return newFunc
+
     def gradient_matrix(self):
         '''
         返回的式UniversalMatrix
@@ -385,21 +404,7 @@ class MathFunction:
             return self.gradient
         res = []
         for index in range(self.dimension):
-            rawData = {"dimension" : self.dimension , "func" : {}}
-            # index : 0 -> x1 , 1 -> x2  ,... ...
-            for powers , value in self.func.items():
-                if index > len(powers) - 1: # 原powers的存储格式为 只存到编号最大的变量，故可能存的长度少于维度
-                    continue # 跳过即可，因为求偏导为0
-                newValue = powers[index] * value
-                if newValue == 0: # 求导结果为0
-                    continue # 跳过
-                newPowers = list(powers)
-                newPowers[index] = newPowers[index] - 1
-                newPowers = tuple(newPowers)
-                rawData["func"][newPowers] = newValue
-            if rawData["func"] == {}: # 偏导为0
-                rawData["func"] = {():Decimal(0)}
-            newFunc = MathFunction("" , rawMode=True , raw=rawData)
+            newFunc = self.derivative(index)
             res.append(newFunc)
 
         matrix = [[i] for i in res]
@@ -603,6 +608,8 @@ class FractionFunction(GenericFraction):
         else:
             raise ValueError("初始化分式函数的输入参数数量错误")
         super().__init__(numerator, denominator)
+        self.gradient = None
+        self.hessianMatrix = None
 
     @staticmethod
     def is_monofraction(s: str):
@@ -629,3 +636,16 @@ class FractionFunction(GenericFraction):
 
     def __repr__(self):
         return str(self)
+
+    def evaluate(self , x: list):
+        n = self.numerator.evaluate(x)
+        d = self.denominator.evaluate(x)
+        try:
+            result = n/d
+        except ZeroDivisionError:
+            result = Decimal(math.inf)
+        return result
+
+    def gradient_matrix(self):
+        # 分式导函数
+        self.denominator = self.denominator*self.denominator
