@@ -20,6 +20,38 @@ from .genericClass import transpose
 from .genericClass import Fraction as GenericFraction
 from collections import deque
 from copy import deepcopy
+from math import sqrt
+from enum import Enum
+import re
+
+def divide_by_plus_minus(str) -> list:
+    '''
+    input: str = "x1+x2+[x1+x2]^2+[x1+[x2+x3]^2]*[x3+4]"
+    output: li = [ "x1" , "x2" , "[x1+x2]^2" , "[x1+[x2+x3]^2]*[x3+4]" ]
+    '''
+    result = [""]
+    que = deque(str)
+    skipSign = 0 # 记录当前位置是否在括号中
+    while que:
+        i = que.popleft()
+        if i in "[({":
+            skipSign += 1
+        elif i in "])}":
+            skipSign -= 1
+        # 当不在括号中且当前字符等于-或+
+        if skipSign == 0 and i in "+-" and result[-1]:
+            # 是一个新的单项式或多项式
+            result.append("")
+        # 将内容加到li中
+        result[-1] += i
+    return result
+ 
+def filter_space(s) -> str:
+    result = ""
+    for i in s:
+        if i != " ":
+            result += i
+    return result
 
 class MathFunction:
     class DecimalMatrix(GenericMatrix):
@@ -69,7 +101,6 @@ class MathFunction:
                         self.data[k][j] -= t*self.data[i][j]
             # 复写,覆盖式
             for i in range(self.row):
-                from copy import deepcopy
                 self.data[i] = deepcopy(self.data[i][self.row::])
             return self
         
@@ -78,7 +109,6 @@ class MathFunction:
             for row in self.data:
                 for i in row:
                     res = res + i**2
-            from math import sqrt
             return Decimal(str(sqrt(res)))
 
         def __rmul__(self, other):
@@ -88,7 +118,6 @@ class MathFunction:
                 other = Decimal(other)
             return super().__rmul__(other)
 
-    from enum import Enum
     class ParseType(Enum):
         coefficient = 1
         monomial = 2
@@ -136,7 +165,6 @@ class MathFunction:
         return str(self)
 
     def __mul__(self , other):
-        from copy import deepcopy
         func = deepcopy(self.func)
         dimension = self.dimension
         t = type(other)
@@ -162,14 +190,15 @@ class MathFunction:
                         for index , i in enumerate(keyA):
                             newKey[index] += i
                     newValue = valueA*valueB
-                    newKey = tuple(newKey)
-                    if newKey in tuple(newFunc.keys()):
-                        newFunc[newKey] += newValue
-                    else:
-                        newFunc[newKey] = newValue
+                    if newValue != 0:
+                        newKey = tuple(newKey)
+                        if newKey in tuple(newFunc.keys()):
+                            newFunc[newKey] += newValue
+                        else:
+                            newFunc[newKey] = newValue
             result = MathFunction("" , rawMode=True , raw={"func":newFunc , "dimension":dimension})
             return result
-    
+
     def __rmul__(self , other):
         return self.__mul__(other)
     
@@ -203,7 +232,6 @@ class MathFunction:
 
     @staticmethod
     def parse_monomial(monomial: str):
-        import re
         powerPattern = r"x\d+\^?-?\d*"
         coefficientPattern = r"[+-]?\d*\.?\d*"
         matches = re.findall(powerPattern, monomial)
@@ -270,7 +298,6 @@ class MathFunction:
         ]
         '''
         res = []
-        from collections import deque
         queue = deque()
         empty = False # 用于解析最后一个单项式及循环的退出
         filtered = False # 遇到左括号开启，右括号关闭（对于负次数）
@@ -280,7 +307,7 @@ class MathFunction:
                 i = s.pop(0)
             else:
                 empty = True
-            if (i == "+" or i == "-" or (empty)) and (not filtered):
+            if ( (empty) or i == "+" or i == "-") and (not filtered):
                 # 出栈
                 # 出栈结果是一个单项式
                 monomial = [""]
@@ -389,7 +416,6 @@ class MathFunction:
         if not self.gradient:
             self.gradient_matrix()
         res = []
-        from copy import deepcopy
         gradient = deepcopy(self.gradient)
         gradient.transpose()
         for i in gradient.data[0]: # 梯度的转置为行向量，行数为1
@@ -404,7 +430,6 @@ class MathFunction:
             self.gradient_matrix()
         # 黑塞矩阵即对梯度再次求偏导，转置这些梯度的梯度，合并即可
         res = []
-        from copy import deepcopy
         gradient = deepcopy(self.gradient)
         gradient.transpose()
         for i in gradient.data[0]:
@@ -428,43 +453,12 @@ class ExtendedMathFunction(MathFunction):
         if not rawMode:
             # 拆解字符串
             # 以+ - 号拆解
-            polynomial = self.filter_space(polynomial)
+            polynomial = filter_space(polynomial)
             func = self.__decode_to_list(polynomial)
             super().__init__("" , rawMode=True , raw={"func": func.func , "dimension": func.dimension})
         else:
             super().__init__(polynomial, rawMode, raw)
-    
-    @staticmethod
-    def filter_space(s) -> str:
-        result = ""
-        for i in s:
-            if i != " ":
-                result += i
-        return result
 
-    @staticmethod
-    def divide_by_plus_minus(str) -> list:
-        '''
-        input: str = "x1+x2+[x1+x2]^2+[x1+[x2+x3]^2]*[x3+4]"
-        output: li = [ "x1" , "x2" , "[x1+x2]^2" , "[x1+[x2+x3]^2]*[x3+4]" ]
-        '''
-        result = [""]
-        que = deque(str)
-        skipSign = 0 # 记录当前位置是否在括号中
-        while que:
-            i = que.popleft()
-            if i == "[" or i == "(":
-                skipSign += 1
-            elif i == "]" or i == ")":
-                skipSign -= 1
-            # 当不在括号中且当前字符等于-或+
-            if skipSign == 0 and (i == "+" or i == "-") and result[-1]:
-                # 是一个新的单项式或多项式
-                result.append("")
-            # 将内容加到li中
-            result[-1] += i
-        return result
-    
     @staticmethod
     def decode_folded_monomial(s: str):
         '''
@@ -542,7 +536,7 @@ class ExtendedMathFunction(MathFunction):
         return res
 
     def __decode_to_list(self , str):
-        li = self.divide_by_plus_minus(str)
+        li = divide_by_plus_minus(str)
         # 现在li中存的是单个式子，如 x1 或 +x3 或者 -[x1+x2]^5
         # 需要将 -[x1+x2]^5 解析成 -1 * x1+x2 ^ 5 并运算
         for index , i in enumerate(li):
@@ -570,5 +564,68 @@ class ExtendedMathFunction(MathFunction):
         return res
 
 class FractionFunction(GenericFraction):
-    def __init__(self, numerator, denominator):
+    def __init__(self, *args):
+        if len(args) == 2:
+            numerator = args[0]
+            denominator = args[1]
+        elif len(args) == 1:
+            s = args[0]
+            s = filter_space(s)
+            # 处理正负号
+            pre = ExtendedMathFunction("1")
+            if s[0] in "+-":
+                if s[0] == "-":
+                    pre = pre * (-1)
+                s = s[1::]
+            # 解析，使用//号表示，用{}表示范围，如{x1}//{x2} 表示x1/x2
+            if "{" in s and (not self.is_monofraction(s)):
+                # 可能是多个分式相加
+                li = divide_by_plus_minus(s)
+                res = FractionFunction("0")
+                for i in li:
+                    i = FractionFunction(i)
+                    res = res + i
+                numerator = res.numerator
+                denominator = res.denominator
+            else:
+                # 单个式子
+                if "//" in s: # 是分式
+                    numerator , denominator = s.split("//")
+                    numerator = re.split(r"[{}]" , numerator)[1]
+                    denominator = re.split(r"[{}]" , denominator)[1]
+                    pass
+                else: # 不是分式，初始化分母为1
+                    numerator = s
+                    denominator = "1"
+                numerator = ExtendedMathFunction(numerator)
+                denominator = ExtendedMathFunction(denominator)
+            numerator = numerator * pre
+        else:
+            raise ValueError("初始化分式函数的输入参数数量错误")
         super().__init__(numerator, denominator)
+
+    @staticmethod
+    def is_monofraction(s: str):
+        filterSign = 0
+        for i in s:
+            if i == "{":
+                filterSign += 1
+            elif i == "}":
+                filterSign -= 1
+            elif filterSign:
+                continue
+            elif i == "+" or i == "-":
+                return False
+        else:
+            return True
+
+    def __str__(self):
+        result = "f(X)={"
+        result += f"{self.numerator}"
+        result += "}//{"
+        result += f"{self.denominator}"
+        result += "}"
+        return result
+
+    def __repr__(self):
+        return str(self)

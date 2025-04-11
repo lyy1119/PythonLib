@@ -8,8 +8,6 @@ from lyy19Lib import *
 from lyy19Lib.mathFunction import *
 from lyy19Lib.convexOptimization import *
 
-
-
 def test_mathfunction():
     print("这是MathFunction类库的测试单元！")
     print("测试开始")
@@ -206,6 +204,36 @@ def test_mathfunction():
     print(f"s={s}")
     f = ExtendedMathFunction(s)
     print(f"f= {f}")
+
+    print()
+
+    print("（15）测试分式函数")
+    s = "[x1+x2]^2"
+    print("测试简单（非分式函数）")
+    print(f"s={s}")
+    f = FractionFunction(s)
+    print(f)
+
+    print()
+
+    print("测试简单分式函数")
+    s = "{x1}//{x2}"
+    print(f"s={s}")
+    f = FractionFunction(s)
+    print(f)
+    print(s)
+    s = "{[x1+x2]^2}//{x3}"
+    print(f"s={s}")
+    f = FractionFunction(s)
+    print(f)
+
+    print()
+
+    print("测试多分式相加")
+    s = "{[x1+x2]^2}//{x3}+{x4}//{4}"
+    print(f"s={s}")
+    f = FractionFunction(s)
+    print(f)
 
 def test_convexOptimization():
     print("Decimal精度：" , end="")
