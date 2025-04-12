@@ -235,6 +235,17 @@ def test_mathfunction():
     f = FractionFunction(s)
     print(f)
 
+    print()
+
+    print("（16）测试分数函数梯度")
+    s = "{x1^2}//{x2}"
+    print(f"s={s}")
+    f = FractionFunction(s)
+    print(f)
+    g = f.gradient_matrix()
+    print("g = f.gradient_matrix()")
+    print(f"g=\n{g}")
+
 def test_convexOptimization():
     print("Decimal精度：" , end="")
     print(getcontext().prec)  # 默认输出 28

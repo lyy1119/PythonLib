@@ -197,6 +197,8 @@ class MathFunction:
                             newFunc[newKey] += newValue
                         else:
                             newFunc[newKey] = newValue
+            if not newFunc.keys():
+                newFunc[()] = 0
             result = MathFunction("" , rawMode=True , raw={"func":newFunc , "dimension":dimension})
             return result
 
@@ -212,8 +214,15 @@ class MathFunction:
                 newFunc[key] += value
             else:
                 newFunc[key] = value
-            if newFunc[key] == 0:
-                del newFunc[key]
+        # 再检查一遍，将0值删除
+        delList = []
+        for key , value in newFunc.items():
+            if value == 0:
+                delList.append(key)
+        for i in delList:
+            del newFunc[i]
+        if not newFunc.keys():
+            newFunc[()] = 0
         result = MathFunction("" , rawMode=True , raw={"func": newFunc , "dimension":max(self.dimension , other.dimension)})
         return result
 
@@ -610,7 +619,9 @@ class FractionFunction(GenericFraction):
         super().__init__(numerator, denominator)
         self.gradient = None
         self.hessianMatrix = None
-        self.dimension = max(numerator.dimension , denominator.dimension)
+        self.dimension = max(self.numerator.dimension , self.denominator.dimension)
+        self.numerator.dimension = self.dimension
+        self.denominator.dimension = self.dimension
 
     @staticmethod
     def is_monofraction(s: str):
@@ -638,6 +649,7 @@ class FractionFunction(GenericFraction):
     def __repr__(self):
         return str(self)
 
+    # 功能函数
     def evaluate(self , x: list):
         n = self.numerator.evaluate(x)
         d = self.denominator.evaluate(x)
@@ -652,9 +664,16 @@ class FractionFunction(GenericFraction):
         denominator = self.denominator
         numerator = self.numerator
         derivativedDenominator = denominator.derivative(xIndex)
+        print(f"dD={derivativedDenominator}")
         derivativedNumerator = numerator.derivative(xIndex)
+        print(f"dN={derivativedNumerator}")
+        temp = derivativedNumerator*numerator
+        print(f"1. {temp}")
+        # print(f"2. {numerator*derivativedDenominator}")
         numerator = derivativedNumerator*numerator - numerator*derivativedDenominator
         denominator = denominator*denominator
+        print(f"n={numerator}")
+        print(f"d={denominator}")
         return type(self)(numerator , denominator)
 
     def gradient_matrix(self):
@@ -665,3 +684,13 @@ class FractionFunction(GenericFraction):
         matrix = GenericMatrix(matrix)
         self.gradient = matrix
         return self.gradient
+
+    def evaluate_gradient(self , x: list) -> MathFunction.DecimalMatrix:
+        if not self.gradient:
+            self.gradient_matrix()
+        res = []
+        for i in self.gradient:
+            f = i[0]
+            res.append([f.evaluate(x)])
+        matrix = MathFunction.DecimalMatrix(res)
+        return matrix

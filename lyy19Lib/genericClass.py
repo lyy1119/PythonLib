@@ -53,6 +53,9 @@ class Matrix:
             res = '\n'.join(['| ' + ' '.join(f"{str(item):<{col_widths[i]}}" for i, item in enumerate(row)) + ' |' for row in self.data])
             return res
 
+        def __repr__(self):
+            return str(self)
+
         def __mul__(self , other):
             """
             return res # type=MathFunction.UniversialMatrix
