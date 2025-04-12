@@ -407,8 +407,6 @@ class MathFunction:
             ... ...
         ]
         '''
-        if not self.func:
-            raise ValueError("函数未正确初始化.")
         if self.gradient:
             return self.gradient
         res = []
@@ -577,7 +575,7 @@ class ExtendedMathFunction(MathFunction):
             res += li[i]
         return res
 
-class FractionFunction(GenericFraction):
+class FractionFunction(GenericFraction , MathFunction):
     def __init__(self, *args):
         if len(args) == 2:
             numerator = args[0]
@@ -668,22 +666,3 @@ class FractionFunction(GenericFraction):
         numerator = derivativedNumerator*denominator - numerator*derivativedDenominator
         denominator = denominator*denominator
         return type(self)(numerator , denominator)
-
-    def gradient_matrix(self):
-        # 分式导函数
-        matrix = []
-        for i in range(self.dimension):
-            matrix.append([self.derivative(i)])
-        matrix = GenericMatrix(matrix)
-        self.gradient = matrix
-        return self.gradient
-
-    def evaluate_gradient(self , x: list) -> MathFunction.DecimalMatrix:
-        if not self.gradient:
-            self.gradient_matrix()
-        res = []
-        for i in self.gradient.data:
-            f = i[0]
-            res.append([f.evaluate(x)])
-        matrix = MathFunction.DecimalMatrix(res)
-        return matrix
