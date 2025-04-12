@@ -371,7 +371,7 @@ class MathFunction:
             res = res + monomialRes
         return res
 
-    def derivative(self , xIndex: int):
+    def derivative(self , xIndex=0):
         rawData = {"dimension" : self.dimension , "func" : {}}
         # index : 0 -> x1 , 1 -> x2  ,... ...
         for powers , value in self.func.items():
@@ -610,6 +610,7 @@ class FractionFunction(GenericFraction):
         super().__init__(numerator, denominator)
         self.gradient = None
         self.hessianMatrix = None
+        self.dimension = max(numerator.dimension , denominator.dimension)
 
     @staticmethod
     def is_monofraction(s: str):
@@ -646,6 +647,21 @@ class FractionFunction(GenericFraction):
             result = Decimal(math.inf)
         return result
 
+    def derivative(self , xIndex=0):
+        # 分式求导法则，分母平方，分子为：上导*下不导 - 下导*上不导
+        denominator = self.denominator
+        numerator = self.numerator
+        derivativedDenominator = denominator.derivative(xIndex)
+        derivativedNumerator = numerator.derivative(xIndex)
+        numerator = derivativedNumerator*numerator - numerator*derivativedDenominator
+        denominator = denominator*denominator
+        return type(self)(numerator , denominator)
+
     def gradient_matrix(self):
         # 分式导函数
-        self.denominator = self.denominator*self.denominator
+        matrix = []
+        for i in range(self.dimension):
+            matrix.append([self.derivative(i)])
+        matrix = GenericMatrix(matrix)
+        self.gradient = matrix
+        return self.gradient
