@@ -6,6 +6,8 @@ from collections import deque
 from copy import deepcopy
 from decimal import Decimal, getcontext
 from datetime import datetime
+from .mathFunction import FractionFunction
+from random import random
 
 # getcontext().prec = 50  # 设置更高的精度
 
@@ -22,6 +24,13 @@ class MethodType(Enum):
     powell = 7
     dfp = 8
     bfgs = 9
+    # 多维约束优化
+    stochasticDirectionMethod = 10
+    compositeMethod = 11
+    penaltyMethodInterior = 12
+    penaltyMethodExterior = 13
+    penaltyMethodMixed    = 14
+
 
 outputAccuracy = 4
 
@@ -723,3 +732,80 @@ class MultidimensionOptimization(OnedimensionOptimization):
         elif method == MethodType.bfgs:
             self.write_logs("操作：bfgs法")
             return self.quasi_newton(method=MethodType.bfgs)
+        
+class ConstraintOptimization(Problem):
+    def __init__(self , function: str , gu: list , hv: list , upLimit: list , lowLimit: list , epsilonX , epsilonf , maxStep=1000):
+        # x0先输入一个任意值
+        self.epsilonx = epsilonX
+        self.epsilonf = epsilonf
+        self.upLimit  = upLimit
+        self.lowLimit = lowLimit
+        x0 = [0] # 初始化用
+        super().__init__(function , x0 , maxStep)
+        # 存储gu，hv
+        self.gu = []
+        self.hv = []
+        for i in gu:
+            self.gu.append(FractionFunction(i))
+        for i in hv:
+            self.hv.append(FractionFunction(i))
+    
+    def in_feasible_domain(self , x: list) -> bool:
+        for i in self.gu:
+            if i.evaluate(x) > 0:
+                return False
+        for i in self.hv:
+            if i.evaluate(x) > 10**(-8): # 也许要修改？应该不能用0
+                return False
+        else:
+            return True
+        
+    def gen_init_point(self) -> list:
+        '''
+        输出结果为: [x1 , x2 , ... , xn]
+        '''
+        upLimit  = self.upLimit
+        lowLimit = self.lowLimit
+        if len(upLimit) != self.function.dimension or len(lowLimit) != self.function.dimension:
+            raise ValueError(f"上下限与函数维度不符，上限：{upLimit}，下限：{lowLimit}，函数维度：{self.function.dimension}")
+        # 生成点
+        result = []
+        for i in range(self.function.dimension):
+            a = lowLimit[i]
+            b = upLimit[i]
+            result.append(a + random()*(b-a))
+        return result
+    
+    def stochasticDirectionMethod(self):
+        def gen_direction(dimension: int):
+            result = []
+            for i in range(dimension):
+                r = random()
+                result.append(2*r-1)
+            return result
+        # 生成初始点
+        while True:
+            initPoint = self.gen_init_point()
+            if self.in_feasible_domain(initPoint):
+                break
+        # 随机方向法主流程
+        x = initPoint
+        t = 1
+        f = self.function.evaluate(x)
+        while True:
+            # 产生随机方向，并寻找最快下降方向
+            s = gen_direction(self.function.dimension)
+            # 计算下一点，判断可行域
+            s = [[i] for i in s]
+            s = MathFunction.DecimalMatrix(s)
+            xNext = x + t*s
+            if self.in_feasible_domain(xNext):
+                # 计算下一点的函数值
+                fNext = self.function.evaluate(xNext)
+                if fNext < f:
+
+            pass
+
+    def solve(self , method: MethodType):
+        if method == MethodType.stochasticDirectionMethod:
+            pass

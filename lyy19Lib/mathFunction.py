@@ -58,7 +58,7 @@ class MathFunction:
     class DecimalMatrix(GenericMatrix):
         def __init__(self, li, check=True):
             if type(li[0][0]) != Decimal:
-                li = [[Decimal(j) for j in i] for i in li]
+                li = [[Decimal(str(j)) for j in i] for i in li]
             super().__init__(li, check)
         def inverse(self):
             '''
@@ -665,4 +665,38 @@ class FractionFunction(GenericFraction , MathFunction):
         derivativedNumerator = numerator.derivative(xIndex)
         numerator = derivativedNumerator*denominator - numerator*derivativedDenominator
         denominator = denominator*denominator
+        return type(self)(numerator , denominator)
+
+    def __truediv__(self, other):
+        if isinstance(other , FractionFunction):
+            return super().__truediv__(other)
+        elif isinstance(other , MathFunction):
+            numerator = self.numerator
+            denominator = self.denominator * other
+            return type(self)(numerator , denominator)
+        elif isinstance(other , int):
+            other = Decimal(other)
+        elif isinstance(other , float):
+            other = Decimal(str(other))
+
+        if isinstance(other , Decimal):
+            denominator = self.denominator * other
+            numerator = self.numerator
+            return type(self)(numerator , denominator)
+
+    def __rtruediv__(self , other):
+        if isinstance(other , FractionFunction):
+            denominator = self.numerator * other.denominator
+            numerator = self.denominator * other.numerator
+        elif isinstance(other , MathFunction):
+            denominator = self.numerator
+            numerator = self.denominator * other
+        elif isinstance(other , int):
+            other = Decimal(other)
+        elif isinstance(other , float):
+            other = Decimal(str(other))
+
+        if isinstance(other , Decimal):
+            numerator = self.denominator * other
+            denominator = self.numerator
         return type(self)(numerator , denominator)

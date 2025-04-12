@@ -136,6 +136,12 @@ class Fraction:
     def __neg__(self):
         return -1*self
 
+    def __truediv__(self , other):
+        if isinstance(other , Fraction):
+            denominator = self.denominator * other.numerator
+            numerator = self.numerator * other.denominator
+            return type(self)(numerator , denominator)
+
 def transpose(matrix: Matrix):
     from copy import deepcopy
     res = deepcopy(matrix)
