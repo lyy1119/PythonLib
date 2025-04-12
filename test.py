@@ -251,6 +251,14 @@ def test_mathfunction():
     print("x = [1,2]")
     print(f.evaluate_gradient(x))
 
+    print("（17）测试求分式函数的海塞矩阵")
+    h = f.hessian_matrix()
+    print("h = f.hessian_matrix()")
+    print(f"h= \n{h}")
+    print("求海塞矩阵的值")
+    print("x = [1,2]")
+    print(f.evaluate_hessian_matrix(x))
+
 def test_convexOptimization():
     print("Decimal精度：" , end="")
     print(getcontext().prec)  # 默认输出 28
