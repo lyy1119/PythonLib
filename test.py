@@ -245,6 +245,11 @@ def test_mathfunction():
     g = f.gradient_matrix()
     print("g = f.gradient_matrix()")
     print(f"g=\n{g}")
+    print()
+    print("求梯度值")
+    x = [1,2]
+    print("x = [1,2]")
+    print(f.evaluate_gradient(x))
 
 def test_convexOptimization():
     print("Decimal精度：" , end="")

@@ -664,16 +664,9 @@ class FractionFunction(GenericFraction):
         denominator = self.denominator
         numerator = self.numerator
         derivativedDenominator = denominator.derivative(xIndex)
-        print(f"dD={derivativedDenominator}")
         derivativedNumerator = numerator.derivative(xIndex)
-        print(f"dN={derivativedNumerator}")
-        temp = derivativedNumerator*numerator
-        print(f"1. {temp}")
-        # print(f"2. {numerator*derivativedDenominator}")
-        numerator = derivativedNumerator*numerator - numerator*derivativedDenominator
+        numerator = derivativedNumerator*denominator - numerator*derivativedDenominator
         denominator = denominator*denominator
-        print(f"n={numerator}")
-        print(f"d={denominator}")
         return type(self)(numerator , denominator)
 
     def gradient_matrix(self):
@@ -689,7 +682,7 @@ class FractionFunction(GenericFraction):
         if not self.gradient:
             self.gradient_matrix()
         res = []
-        for i in self.gradient:
+        for i in self.gradient.data:
             f = i[0]
             res.append([f.evaluate(x)])
         matrix = MathFunction.DecimalMatrix(res)
