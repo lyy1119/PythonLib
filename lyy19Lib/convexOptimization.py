@@ -9,6 +9,7 @@ from datetime import datetime
 from .mathFunction import FractionFunction
 from random import random
 import numpy as np
+from math import sqrt
 
 # getcontext().prec = 50  # 设置更高的精度
 
@@ -742,8 +743,9 @@ class ConstraintOptimization(Problem):
         self.upLimit  = upLimit
         self.lowLimit = lowLimit
         x0 = [0] # 初始化用
-        super().__init__(function , x0 , maxStep)
+        super().__init__("1" , x0 , maxStep)
         # 存储gu，hv
+        self.function = FractionFunction(function)
         self.gu = []
         self.hv = []
         for i in gu:
@@ -754,7 +756,7 @@ class ConstraintOptimization(Problem):
             f = FractionFunction(i)
             f.update_dimension(self.function.dimension)
             self.hv.append(f)
-    
+
     def in_feasible_domain(self , x: list) -> bool:
         for i in self.gu:
             if i.evaluate(x) > 0:
@@ -765,7 +767,7 @@ class ConstraintOptimization(Problem):
         else:
             return True
         
-    def gen_init_point(self) -> list:
+    def gen_init_point(self) -> MathFunction.DecimalMatrix:
         '''
         输出结果为: [x1 , x2 , ... , xn]
         '''
@@ -866,10 +868,67 @@ class ConstraintOptimization(Problem):
                     f = self.function.evaluate(newX)
                     result.append([newX , f])
             return result
+        points = generate_init_composite(self.function.dimension)
+        def cal_center_point(points: list) -> MathFunction.DecimalMatrix:
+            length = len(points)
+            result = points[0][0]
+            for i in range(1,length):
+                result = result + points[i][0]
+            result = result / length
+            return result
+        step = 0
         while True:
+            step += 1
             # 复合形法主流程
-
+            points.sort(key=lambda x: x[1]) # 升序
+            xc = cal_center_point(points)
+            fc = self.function.evaluate(xc)
+            df = 0
+            for i in points:
+                df = df + (fc - i[1])**2
+            df = sqrt(df/2/self.function.dimension)
+            if df < self.epsilonf:
+                break
+            else:
+                # 计算去掉最高点形成的形心
+                xh , fh = points.pop()
+                xc = cal_center_point(points)
+                if self.in_feasible_domain(xc):
+                    reflect = Decimal("1.3")
+                    index = -1
+                    while True:
+                        # 计算反射点
+                        xr = xc + reflect*(xc - xh)
+                        if self.in_feasible_domain(xr):
+                            fr = self.function.evaluate(xr)
+                            if fr < fh:
+                                points.append([xr , fr])
+                                break
+                            else:
+                                if reflect < self.epsilonx:
+                                    xh = points[index]
+                                    index -= 1
+                                else:
+                                    reflect = reflect / 2
+                        else:
+                            reflect = reflect / 2
+                else: # xc不在可行域
+                    # 重置上下界
+                    xl = points[0]
+                    for i in range(self.function.dimension):
+                        self.upLimit[i] = max(xl.data[i][0] , xc.data[i][0])
+                        self.lowLimit[i] = min(xl.data[i][0] , xc.data[i][0])
+                    points = generate_init_composite(self.function.dimension)
+        x = xc
+        f = self.function.evaluate(x)
+        self.res = self.Result(x , f , step)
+        return self.res
+    
+    def penalty_interior(self):
+        pass
 
     def solve(self , method: MethodType):
         if method == MethodType.stochasticDirectionMethod:
             return self.stochasticDirectionMethod()
+        elif method == MethodType.compositeMethod:
+            return self.compositeMethod()

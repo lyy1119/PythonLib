@@ -372,6 +372,19 @@ def test_convexOptimization():
     q.solve(MethodType.stochasticDirectionMethod)
     print(q.res)
 
+# 复合型法
+    print()
+    print("复合形法测试")
+    gu = [
+        "-[x1+30]",
+        "-[x1+x2+20]",
+        "-[x2+30]",
+        "x1^2-x2^2-6400"
+    ]
+    q = ConstraintOptimization("[x1+20]^3 + [x2+20]^2" , gu , [] , [65 , 65] , [-10 , 10] , 0.000001 , 0.000000001)
+    q.solve(MethodType.compositeMethod)
+    print(q.res)
+
 
 
 print("""
