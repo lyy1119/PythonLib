@@ -8,6 +8,7 @@ from decimal import Decimal, getcontext
 from datetime import datetime
 from .mathFunction import FractionFunction
 from random import random
+import numpy as np
 
 # getcontext().prec = 50  # 设置更高的精度
 
@@ -746,9 +747,13 @@ class ConstraintOptimization(Problem):
         self.gu = []
         self.hv = []
         for i in gu:
-            self.gu.append(FractionFunction(i))
+            f = FractionFunction(i)
+            f.update_dimension(self.function.dimension)
+            self.gu.append(f)
         for i in hv:
-            self.hv.append(FractionFunction(i))
+            f = FractionFunction(i)
+            f.update_dimension(self.function.dimension)
+            self.hv.append(f)
     
     def in_feasible_domain(self , x: list) -> bool:
         for i in self.gu:
@@ -773,16 +778,15 @@ class ConstraintOptimization(Problem):
         for i in range(self.function.dimension):
             a = lowLimit[i]
             b = upLimit[i]
-            result.append(a + random()*(b-a))
+            result.append([a + random()*(b-a)])
+        result = MathFunction.DecimalMatrix(result)
         return result
     
     def stochasticDirectionMethod(self):
         def gen_direction(dimension: int):
-            result = []
-            for i in range(dimension):
-                r = random()
-                result.append(2*r-1)
-            return result
+            vec = np.random.normal(0, 1, size=dimension)
+            norm = np.linalg.norm(vec)
+            return (vec / norm).tolist()
         def generate_descent_direction(dimension: int , x: MathFunction.DecimalMatrix , t: float):
             descentS = None
             f0 = self.function.evaluate(x)
@@ -791,6 +795,7 @@ class ConstraintOptimization(Problem):
                 s = gen_direction(self.function.dimension)
                 s = [[i] for i in s]
                 s = MathFunction.DecimalMatrix(s)
+                s = s / s.frobenius_norm()
                 # 计算沿着该方向的下一点
                 xNext = x + t*s
                 if self.in_feasible_domain(xNext):
@@ -800,30 +805,71 @@ class ConstraintOptimization(Problem):
                         descentS = s
                 # else:
                     # continue
-            return descentS
+            return descentS , f0
         # 生成初始点
         while True:
             initPoint = self.gen_init_point()
             if self.in_feasible_domain(initPoint):
                 break
         # 随机方向法主流程
+        print(f"初始点为：{initPoint}")
         x = initPoint
-        t = 1
-        f = self.function.evaluate(x)
+        t = 0.001
+        f0 = self.function.evaluate(x)
+        step = 0
+        x0 = x
         while True:
-            # 产生随机方向，并寻找最快下降方向
-            s = gen_direction(self.function.dimension)
-            # 计算下一点，判断可行域
-            s = [[i] for i in s]
-            s = MathFunction.DecimalMatrix(s)
-            xNext = x + t*s
-            if self.in_feasible_domain(xNext):
-                # 计算下一点的函数值
-                fNext = self.function.evaluate(xNext)
-                if fNext < f:
+            step += 1
+            f00 = f0
+            # 产生随机方向
+            while True:
+                direction , f0 = generate_descent_direction(self.function.dimension , x , t)
+                if direction == None:
+                    t = 0.7*t
+                else:
+                    break
+                if t < self.epsilonx:
+                    break
+                # 生成下降方向的终止条件：生成了下降方向或者步长小于epsilonx
+            if direction:
+                # 沿着下降方向搜索
+                x0 = x + t*direction
+                f0 = self.function.evaluate(x)
+                t = 1.3*t
+                while t > self.epsilonx:
+                    x = x0 + t*direction
+                    if self.in_feasible_domain(x):
+                        f1 = self.function.evaluate(x)
+                        if f1 < f0:
+                            f0 = f1
+                            x0 = x
+                            t = 1.3*t
+                            continue
+                    if t > self.epsilonx:
+                        t = t * 0.7
+            if (not direction) or abs(f00 - f0) < self.epsilonf:
+                break
+        self.res = self.Result(x0 , f0 , step)
+        return self.res
 
-            pass
+    def compositeMethod(self):
+        def generate_init_composite(dimension: int):
+            # 生成2*dimension个点
+            result = [] # [x , f(x)]
+            for i in range(dimension):
+                # 每个维度生成两个可行点
+                while len(result) < i*2:
+                    while True:
+                        newX = self.gen_init_point()
+                        if self.in_feasible_domain(newX):
+                            break
+                    f = self.function.evaluate(newX)
+                    result.append([newX , f])
+            return result
+        while True:
+            # 复合形法主流程
+
 
     def solve(self , method: MethodType):
         if method == MethodType.stochasticDirectionMethod:
-            pass
+            return self.stochasticDirectionMethod()

@@ -359,6 +359,19 @@ def test_convexOptimization():
     q.solve(method=MethodType.bfgs)
     print(q.res)
 
+# 多维约束优化
+# 随机方向法
+    print("多维约束优化方法测试")
+    print("随机方向法")
+    gu = [
+        "x1+x2-6",
+        "-x1",
+        "-x2"
+    ]
+    q = ConstraintOptimization("1-2*x1-x2^2" , gu , [] , [3,3] , [0 , 0] , 0.00001 , 0.00001)
+    q.solve(MethodType.stochasticDirectionMethod)
+    print(q.res)
+
 
 
 print("""

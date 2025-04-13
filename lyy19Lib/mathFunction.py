@@ -667,6 +667,10 @@ class FractionFunction(GenericFraction , MathFunction):
         denominator = denominator*denominator
         return type(self)(numerator , denominator)
 
+    def update_dimension(self , newDimension):
+        self.numerator.dimension = newDimension
+        self.denominator.dimension = newDimension
+
     def __truediv__(self, other):
         if isinstance(other , FractionFunction):
             return super().__truediv__(other)
