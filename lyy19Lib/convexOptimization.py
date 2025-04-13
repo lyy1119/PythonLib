@@ -63,8 +63,14 @@ class Problem:
         x0 = [1,2,3 ...]
         maxStep 最大迭代步长 默认值1000
         '''
-        self.function = MathFunction(function)
-        self.x0 = MathFunction.DecimalMatrix([[i] for i in x0]) # 转化为列向量
+        if isinstance(function , MathFunction):
+            self.function = function
+        else:
+            self.function = MathFunction(function)
+        if type(x0) != MathFunction.DecimalMatrix:
+            self.x0 = MathFunction.DecimalMatrix([[i] for i in x0]) # 转化为列向量
+        else:
+            self.x0 = x0
         self.maxStep = maxStep
         self.logs = "" # 日志
         self.output = 3
@@ -816,7 +822,7 @@ class ConstraintOptimization(Problem):
         # 随机方向法主流程
         print(f"初始点为：{initPoint}")
         x = initPoint
-        t = 0.001
+        t = 1
         f0 = self.function.evaluate(x)
         step = 0
         x0 = x
@@ -924,11 +930,48 @@ class ConstraintOptimization(Problem):
         self.res = self.Result(x , f , step)
         return self.res
     
-    def penalty_interior(self):
-        pass
+    def penalty_interior(self , r , c=0.6):
+        print(f"r={r}")
+        def create_penalty_function(r):
+            result = self.function
+            for i in self.gu:
+                result = result - r/i
+            return result
+        c = Decimal(str(c))
+        r = Decimal(str(r))
+        while True:
+            x = self.gen_init_point()
+            if self.in_feasible_domain(x):
+                break
+        # 计算初始
+        r = r / c
+        penaltyFun = create_penalty_function(r)
+        fmin = penaltyFun.evaluate(x)
+        step = 0
+        print(f"initPoint x=\n{x}")
+        while True:
+            step += 1
+            r = c*r
+            x0 = x
+            f0 = fmin
+            penaltyFun = create_penalty_function(r)
+            p = MultidimensionOptimization(penaltyFun , x0 , self.epsilonx , self.epsilonf)
+            p.solve(MethodType.dfp)
 
-    def solve(self , method: MethodType):
+            fmin = p.res.realF
+            x = p.res.realX
+            df = abs(f0 - fmin)
+            dx = (x0 - x).frobenius_norm()
+            print(f"step={step} , fmin={fmin} , x=\n{x}")
+            if df <= self.epsilonf and dx <= self.epsilonx:
+                break
+        self.res = self.Result(x , fmin , step)
+        return self.res
+
+    def solve(self , method: MethodType , *args):
         if method == MethodType.stochasticDirectionMethod:
             return self.stochasticDirectionMethod()
         elif method == MethodType.compositeMethod:
             return self.compositeMethod()
+        elif method == MethodType.penaltyMethodInterior:
+            return self.penalty_interior(*args)

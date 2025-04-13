@@ -381,8 +381,20 @@ def test_convexOptimization():
         "-[x2+30]",
         "x1^2-x2^2-6400"
     ]
-    q = ConstraintOptimization("[x1+20]^3 + [x2+20]^2" , gu , [] , [65 , 65] , [-10 , 10] , 0.000001 , 0.000000001)
+    q = ConstraintOptimization("[x1+20]^3 + [x2+20]^2" , gu , [] , [65 , 65] , [-10 , 10] , 0.001 , 0.001)
     q.solve(MethodType.compositeMethod)
+    print(q.res)
+
+# 内点罚函数法
+    print()
+    print("内点罚函数法测试")
+    gu = [
+        "1-x1",
+    ]
+    q = ConstraintOptimization("x1^2+x2^2" , gu , [] , [10 , 10] , [5 , -10] , 0.01 , 0.01)
+
+    q.solve(MethodType.penaltyMethodInterior , 25)
+    print(q.gu)
     print(q.res)
 
 
