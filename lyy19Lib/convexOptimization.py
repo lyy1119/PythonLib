@@ -783,6 +783,24 @@ class ConstraintOptimization(Problem):
                 r = random()
                 result.append(2*r-1)
             return result
+        def generate_descent_direction(dimension: int , x: MathFunction.DecimalMatrix , t: float):
+            descentS = None
+            f0 = self.function.evaluate(x)
+            # 产生dimension*2个随机方向
+            for _ in range(dimension*2):
+                s = gen_direction(self.function.dimension)
+                s = [[i] for i in s]
+                s = MathFunction.DecimalMatrix(s)
+                # 计算沿着该方向的下一点
+                xNext = x + t*s
+                if self.in_feasible_domain(xNext):
+                    fNext = self.function.evaluate(xNext)
+                    if fNext < f0:
+                        f0 = fNext
+                        descentS = s
+                # else:
+                    # continue
+            return descentS
         # 生成初始点
         while True:
             initPoint = self.gen_init_point()
