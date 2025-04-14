@@ -9,7 +9,7 @@ from datetime import datetime
 from .mathFunction import FractionFunction
 from random import random
 import numpy as np
-from math import sqrt
+from math import sqrt, inf
 
 # getcontext().prec = 50  # 设置更高的精度
 
@@ -361,12 +361,13 @@ class OnedimensionOptimization(Problem):
         else:
             step = -step
             while True:
+                print(f"a1={a1} , a2={a2}")
                 a1 = a1 + step
-                f2 = f1
+                # f2 = f1
                 x = self.x0 + a1*self.s
                 f1 = self.function.evaluate(x)
                 if f2 > f1:
-                    a2 = a1 - step
+                    # a2 = a1 - step
                     step = step * 2
                 else:
                     break
@@ -968,6 +969,73 @@ class ConstraintOptimization(Problem):
         self.res = self.Result(x , fmin , step)
         return self.res
 
+    def penalty_exterior(self, r , c=8):
+        class penalty_function(MathFunction):
+            def __init__(self, function: FractionFunction, gu: list, hv: list):
+                self.function = function
+                self.gu = gu
+                self.hv = hv
+                self.r = 0
+                dimension = self.function.dimension
+                for i in self.gu:
+                    dimension = max(i.dimension, dimension)
+                for i in self.hv:
+                    dimension = max(i.dimension, dimension)
+                self.function.dimension = dimension
+                for i in self.gu:
+                    i.dimension = dimension
+                for i in self.hv:
+                    i.dimension = dimension
+                self.dimension = dimension
+
+            def set_r(self , r):
+                if type(r) != Decimal:
+                    r = Decimal(str(r))
+                self.r = r
+
+            def evaluate(self, x: MathFunction.DecimalMatrix):
+                f = self.function.evaluate(x)
+                g = Decimal(0)
+                for i in self.gu:
+                    g += (max(0 , i.evaluate(x)))**2
+                g = g * self.r
+                h = Decimal(0)
+                for i in self.hv:
+                    h += i.evaluate(x)**2
+                h = h * self.r
+                return f + g + h
+            def __str__(self):
+                s = ""
+                s = s + str(self.function)
+                for i in self.gu:
+                    s = s + "r*max{0, " + str(i) + "}"
+                for i in self.hv:
+                    s = s + "r*[" + str(i) + "]^2"
+                return s
+        # 外点法求最优解
+        x = self.gen_init_point()
+        r = r / c
+        step = 0
+        while True:
+            step += 1
+            r = r * c
+            x0 = x
+            penaltyFun = penalty_function(self.function, self.gu, self.hv)
+            p = MultidimensionOptimization(penaltyFun, x0, self.epsilonx, self.epsilonf)
+            p.solve(MethodType.powell) # 目前只能用powell法，因为有max函数，目前无法求解其梯度或海塞矩阵
+            x = p.res.realX
+            f = p.res.realF
+            q = Decimal(-inf)
+            for i in self.gu:
+                q = max(q, i.evaluate(x))
+            for i in self.hv:
+                q = max(q, i.evaluate(x))
+            dx = (x-x0).frobenius_norm()
+            if q < 0.001 or (dx <= 0.00001 and r > 10**8):
+                break
+        self.res = self.Result(x , f , step)
+
+
     def solve(self , method: MethodType , *args):
         if method == MethodType.stochasticDirectionMethod:
             return self.stochasticDirectionMethod()
@@ -975,3 +1043,5 @@ class ConstraintOptimization(Problem):
             return self.compositeMethod()
         elif method == MethodType.penaltyMethodInterior:
             return self.penalty_interior(*args)
+        elif method == MethodType.penaltyMethodExterior:
+            return self.penalty_exterior(*args)
