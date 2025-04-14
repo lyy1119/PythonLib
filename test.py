@@ -397,17 +397,15 @@ def test_convexOptimization():
     print(q.gu)
     print(q.res)
 
-# 外点法
-    input()
-    print()
-    print("外点法测试")
-    gu = [
-        "x1 - x2 + 1"
-    ]
-    q = ConstraintOptimization("x1+2*x2^2" , gu , [] , [-2 , 4] , [-4 , 2] , 0.1 , 0.1)
-    q.solve(MethodType.penaltyMethodExterior , 1)
-    print(q.res)
-
+# # 外点法
+#     print()
+#     print("外点法测试")
+#     gu = [
+#         "x1 - x2 + 1"
+#     ]
+#     q = ConstraintOptimization("x1+2*x2^2" , gu , [] , [-3 , 3] , [-4 , 2] , 0.1 , 0.1)
+#     q.solve(MethodType.penaltyMethodInterior , 25)
+#     print(q.res)
 
 print("""
 ===========================

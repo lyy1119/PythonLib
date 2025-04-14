@@ -361,7 +361,7 @@ class OnedimensionOptimization(Problem):
         else:
             step = -step
             while True:
-                print(f"a1={a1} , a2={a2}")
+                # print(f"a1={a1} , a2={a2}")
                 a1 = a1 + step
                 # f2 = f1
                 x = self.x0 + a1*self.s
@@ -1012,7 +1012,14 @@ class ConstraintOptimization(Problem):
                 for i in self.hv:
                     s = s + "r*[" + str(i) + "]^2"
                 return s
-        # 外点法求最优解
+        def create_penalty_function(r):
+            result = self.function
+            for i in self.gu:
+                result = result + r*(i*i)
+            for i in self.hv:
+                result = result + r*(i*i)
+            return result
+        #  外点法求最优解
         x = self.gen_init_point()
         r = r / c
         step = 0
@@ -1020,9 +1027,10 @@ class ConstraintOptimization(Problem):
             step += 1
             r = r * c
             x0 = x
-            penaltyFun = penalty_function(self.function, self.gu, self.hv)
+            penaltyFun = create_penalty_function(r)
+            # penaltyFun = penalty_function(self.function, self.gu, self.hv)
             p = MultidimensionOptimization(penaltyFun, x0, self.epsilonx, self.epsilonf)
-            p.solve(MethodType.powell) # 目前只能用powell法，因为有max函数，目前无法求解其梯度或海塞矩阵
+            p.solve(MethodType.bfgs) # 目前只能用powell法，因为有max函数，目前无法求解其梯度或海塞矩阵
             x = p.res.realX
             f = p.res.realF
             q = Decimal(-inf)
