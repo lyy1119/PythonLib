@@ -20,10 +20,18 @@ from .genericClass import transpose
 from .genericClass import Fraction as GenericFraction
 from collections import deque
 from copy import deepcopy
-from math import sqrt
+from math import sqrt, inf
 from enum import Enum
 import math
 import re
+
+def gcd(a , b):
+    if a < b:
+        a , b = b , a
+    while b > 0:
+        a = a % b
+        a , b = b , a
+    return a
 
 def divide_by_plus_minus(str) -> list:
     '''
@@ -704,3 +712,43 @@ class FractionFunction(GenericFraction , MathFunction):
             numerator = self.denominator * other
             denominator = self.numerator
         return type(self)(numerator , denominator)
+    
+    def simplify(self):
+        temp = [inf for _ in range(self.dimension)]
+        for i in self.numerator.func.keys():
+            for index in range(self.dimension):
+                if index < len(i):
+                    value = i[index]
+                    temp[index] = min(temp[index], value)
+                else:
+                    temp[index] = min(temp[index], Decimal(0))
+        for i in self.denominator.func.keys():
+            for index in range(self.dimension):
+                if index < len(i):
+                    value = i[index]
+                    temp[index] = min(temp[index], value)
+                else:
+                    temp[index] = min(temp[index], Decimal(0))
+        g = 0
+        for i in self.numerator.func.values():
+            g = gcd(g , abs(i))
+        for i in self.denominator.func.values():
+            g = gcd(g , abs(i))
+        newNumerator = {}
+        newDenominator = {}
+        for key, value in self.numerator.func.items():
+            newKey = list(key)
+            for index , j in enumerate(newKey):
+                newKey[index] = j - temp[index]
+            newKey = tuple(newKey)
+            newValue = value // g
+            newNumerator[newKey] = newValue
+        for key, value in self.denominator.func.items():
+            newKey = list(key)
+            for index, j in enumerate(newKey):
+                newKey[index] = j - temp[index]
+            newKey = tuple(newKey)
+            newValue = value // g
+            newDenominator[newKey] = newValue
+        self.numerator.func = newNumerator
+        self.denominator.func = newDenominator
