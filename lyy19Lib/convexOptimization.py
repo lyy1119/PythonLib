@@ -57,7 +57,7 @@ class Problem:
             s +=f"函数值F={self.outputF}\n"
             s += "=============================\n"
             return s
-    def __init__(self , function: str , x0: list , maxStep=1000):
+    def __init__(self , function: str , x0: list , maxStep=100):
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
@@ -106,7 +106,7 @@ class Problem:
 
 class OnedimensionOptimization(Problem):
 
-    def __init__(self, function: MathFunction, x0: list, s: list , epsilonx: float , epsilonf: float , maxStep=1000):
+    def __init__(self, function: MathFunction, x0: list, s: list , epsilonx: float , epsilonf: float , maxStep=100):
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
@@ -271,28 +271,28 @@ class OnedimensionOptimization(Problem):
             while True:
                 step += 1
                 totalStep += 1
-                self.write_logs(f"迭代：{totalStep}")
-                self.write_logs(f"A:{que[0][0]}")
-                self.write_logs(f"X=\n{que[0][1]}")
-                self.write_logs(f"F={que[0][2]}")
-                self.write_logs(f"A1:{que[1][0]}")
-                self.write_logs(f"X=\n{que[1][1]}")
-                self.write_logs(f"F={que[1][2]}")
-                self.write_logs(f"A2:{que[2][0]}")
-                self.write_logs(f"X=\n{que[2][1]}")
-                self.write_logs(f"F={que[2][2]}")
-                self.write_logs(f"B:{que[3][0]}")
-                self.write_logs(f"X=\n{que[3][1]}")
-                self.write_logs(f"F={que[3][2]}")
+                # self.write_logs(f"迭代：{totalStep}")
+                # self.write_logs(f"A:{que[0][0]}")
+                # self.write_logs(f"X=\n{que[0][1]}")
+                # self.write_logs(f"F={que[0][2]}")
+                # self.write_logs(f"A1:{que[1][0]}")
+                # self.write_logs(f"X=\n{que[1][1]}")
+                # self.write_logs(f"F={que[1][2]}")
+                # self.write_logs(f"A2:{que[2][0]}")
+                # self.write_logs(f"X=\n{que[2][1]}")
+                # self.write_logs(f"F={que[2][2]}")
+                # self.write_logs(f"B:{que[3][0]}")
+                # self.write_logs(f"X=\n{que[3][1]}")
+                # self.write_logs(f"F={que[3][2]}")
                 if que[1][2] > que[2][2]: # F1>F2
                     # F1高，舍弃A
                     # A1 , A2 -> A , A1 , A2 =None
-                    self.write_logs("舍弃A")
+                    # self.write_logs("舍弃A")
                     que[0] = deepcopy(que[1])
                     que[1] = deepcopy(que[2])
                     que[2] = None
                 else: # que[1][3] < que[2][3]
-                    self.write_logs("舍弃B")
+                    # self.write_logs("舍弃B")
                     que[3] = deepcopy(que[2])
                     que[2] = deepcopy(que[1])
                     que[1] = None
@@ -375,7 +375,7 @@ class OnedimensionOptimization(Problem):
 
 
 class MultidimensionOptimization(OnedimensionOptimization):
-    def __init__(self, function, x0, epsilonx, epsilonf , maxStep=1000):
+    def __init__(self, function, x0, epsilonx, epsilonf , maxStep=100):
         s = [1] # 防报错用
         super().__init__(function, x0, s, epsilonx, epsilonf , maxStep)
         self.oneDimensionProblemMethod = MethodType.goldenSection
@@ -644,48 +644,56 @@ class MultidimensionOptimization(OnedimensionOptimization):
         return res
 
     def quasi_newton(self , method=MethodType.dfp):
-        step = 1
+        step = 0
         x = self.x0
         # 第一步使用负梯度方向搜索,手动
-        e = []
+        identityMatrix = []
         for i in range(self.function.dimension):
             ei = [0 for _ in range(self.function.dimension)]
             ei[i] = 1
-            e.append(ei)
+            identityMatrix.append(ei)
         # 单位矩阵
-        inversH = MathFunction.DecimalMatrix(e)
-        g = self.function.evaluate_gradient(x)
-        self.write_logs(f"梯度g=\n{g}")
-        s = -inversH * g
-        self.set_s(s)
-        x0 = x
-        self.write_logs(f"迭代：1，使用负梯度方向优化")
-        self.write_logs(f"优化方向S:\n{s}")
-        self.add_log_indent()
-        a , x , f = super().solve(self.oneDimensionProblemMethod)
-        self.reduce_log_indent()
-        self.write_logs(f"优化结果:\n")
-        self.write_logs(f"A={a}")
-        self.write_logs(f"X*=\n{x}")
-        self.write_logs(f"F*={f}")
-        g0 = g
-        self.set_x0_from_decimal_matrix(x)
+        identityMatrix = MathFunction.DecimalMatrix(identityMatrix)
+        inversH = deepcopy(identityMatrix)
         g = self.function.evaluate_gradient(x)
         while True:
             step = step + 1
+            deltaG = g
+            s = - inversH * g
+            deltaX = x
+            if (transpose(g)*s).frobenius_norm() > 0:
+                s = -g
+                inversH = deepcopy(identityMatrix)
+            # 优化
+            f0 = self.function.evaluate(deltaX)
+            self.set_x0_from_decimal_matrix(deltaX)
+            self.set_s(s)
+            a, x, f = super().solve(self.oneDimensionProblemMethod)
+            self.set_x0_from_decimal_matrix(x)
+
+            self.write_logs(f"本次迭代搜索结果:")
+            self.write_logs(f"A={a}")
+            self.write_logs(f"X*=\n{x}")
+            self.write_logs(f"F*={f}")
+
+            deltaX = deltaX - x
             g = self.function.evaluate_gradient(x)
-            deltaX = x - x0
-            deltaG = g - g0
-            transposeDeltaX = transpose(deltaX)
-            transposeDeltaG = transpose(deltaG)
+            deltaG = deltaG - g
+
             self.write_logs(f"迭代：{step}")
             self.write_logs(f"当前点的梯度向量为:")
             self.write_logs(f"{g}")
             self.write_logs(f"DeltaX=\n{deltaX}")
             self.write_logs(f"DeltaG=\n{deltaG}")
-            if deltaX.frobenius_norm() < self.epsilonx:
-                break
 
+            if g.frobenius_norm() < self.epsilonx and deltaX.frobenius_norm() < self.epsilonx:
+                break
+            if step > self.maxStep:
+                break
+            if f0 < f:
+                break
+            transposeDeltaX = transpose(deltaX)
+            transposeDeltaG = transpose(deltaG)
             # 计算修正矩阵
             # dfp法
             if method == MethodType.dfp:
@@ -700,24 +708,6 @@ class MultidimensionOptimization(OnedimensionOptimization):
             inversH = inversH + e
             self.write_logs(f"拟黑塞矩阵H的逆为")
             self.write_logs(f"{inversH}")
-            # 计算新的方向s
-            s = - inversH * g
-            self.write_logs(f"搜索方向为S:\n{s}")
-            self.set_s(s)
-            # 将此轮的数值记录在“上一轮变量”
-            x0 = x
-            g0 = g
-            f0 = f
-            self.add_log_indent()
-            a , x , f = super().solve(self.oneDimensionProblemMethod)
-            self.reduce_log_indent()
-            self.write_logs(f"本次迭代搜索结果:")
-            self.write_logs(f"A={a}")
-            self.write_logs(f"X*=\n{x}")
-            self.write_logs(f"F*={f}")
-            self.set_x0_from_decimal_matrix(x)
-            if abs(a) < self.epsilonx or abs((f-f0)) < self.epsilonf:
-                break
         self.write_logs(f"完成：dfp/bfgs优化完成")
         res = [x , f , step]
         self.res = self.Result(res[0] , res[1] , res[2])
@@ -747,7 +737,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             return self.quasi_newton(method=MethodType.bfgs)
         
 class ConstraintOptimization(Problem):
-    def __init__(self , function: str , gu: list , hv: list , upLimit: list , lowLimit: list , epsilonX , epsilonf , maxStep=1000):
+    def __init__(self , function: str , gu: list , hv: list , upLimit: list , lowLimit: list , epsilonX , epsilonf , maxStep=100):
         # x0先输入一个任意值
         self.epsilonx = epsilonX
         self.epsilonf = epsilonf
