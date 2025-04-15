@@ -593,8 +593,8 @@ class FractionFunction(GenericFraction , MathFunction):
             s = filter_space(s)
             # 处理正负号
             pre = ExtendedMathFunction("1")
-            if s[0] in "+-":
-                if s[0] == "-":
+            if s[0] in "+-" and  (not (s[1].isalpha() or s[1].isnumeric())):
+                if s[0] == "-" :
                     pre = pre * (-1)
                 s = s[1::]
             # 解析，使用//号表示，用{}表示范围，如{x1}//{x2} 表示x1/x2

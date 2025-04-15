@@ -93,6 +93,7 @@ class Problem:
         return deepcopy(self.logs)
 
     def write_logs(self , s: str):
+        print(s)
         s = s.split("\n")
         s =  '\n'.join('> ' * (self.outputIndent) + line for line in s)
         self.logs = self.logs + s + "\n"
@@ -341,14 +342,15 @@ class OnedimensionOptimization(Problem):
         s: 搜索方向
         return [a: Decimal , b: Decimal]
         '''
-        step = Decimal(str(self.epsilonx))/Decimal(100) # 步长
+        step = Decimal(str(self.epsilonx))/Decimal(1000) # 步长
         a1 = 0
         a2 = step
         f1 = self.function.evaluate(self.x0)
         x = self.x0 + a2*self.s
         f2 = self.function.evaluate(x)
         if f2 < f1:
-            while True:
+            while abs(f1-f2) > 10e-10:
+                # print(f"1. a1={a1} , a2={a2}, f1-f2={f1-f2}")
                 step = step * 2
                 a2 = a2 + step
                 f1 = f2
@@ -360,14 +362,14 @@ class OnedimensionOptimization(Problem):
                     break
         else:
             step = -step
-            while True:
-                # print(f"a1={a1} , a2={a2}")
+            while abs(f1-f2) > 10e-10:
+                # print(f"2. a1={a1} , a2={a2}, f1-f2={f1-f2}")
                 a1 = a1 + step
-                # f2 = f1
+                f2 = f1
                 x = self.x0 + a1*self.s
                 f1 = self.function.evaluate(x)
                 if f2 > f1:
-                    # a2 = a1 - step
+                    a2 = a1 - step
                     step = step * 2
                 else:
                     break
@@ -931,12 +933,13 @@ class ConstraintOptimization(Problem):
         self.res = self.Result(x , f , step)
         return self.res
     
-    def penalty_interior(self , r , c=0.6):
+    def penalty_interior(self , r , c=0.6, multiDimensionOptimizationMethod=MethodType.powell):
         print(f"r={r}")
         def create_penalty_function(r):
             result = self.function
             for i in self.gu:
                 result = result - r/i
+                # result.simplify()
             return result
         c = Decimal(str(c))
         r = Decimal(str(r))
@@ -957,7 +960,7 @@ class ConstraintOptimization(Problem):
             f0 = fmin
             penaltyFun = create_penalty_function(r)
             p = MultidimensionOptimization(penaltyFun , x0 , self.epsilonx , self.epsilonf)
-            p.solve(MethodType.dfp)
+            p.solve(multiDimensionOptimizationMethod)
 
             fmin = p.res.realF
             x = p.res.realX
