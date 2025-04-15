@@ -93,9 +93,9 @@ class Problem:
         return deepcopy(self.logs)
 
     def write_logs(self , s: str):
-        print(s)
         s = s.split("\n")
         s =  '\n'.join('> ' * (self.outputIndent) + line for line in s)
+        print(s)
         self.logs = self.logs + s + "\n"
 
     def set_x0_from_list(self , x0):
@@ -633,7 +633,8 @@ class MultidimensionOptimization(OnedimensionOptimization):
             dx = (x0 - x).frobenius_norm()
             self.write_logs(f"deltaX={dx}")
             # 计算df
-            df = abs((f1-f2)/f1)
+            # df = abs((f1-f2)/f1)
+            df = abs((f1-f2))
             self.write_logs(f"deltaF={df}")
             if dx < self.epsilonx or df < self.epsilonf:
                 break
@@ -654,6 +655,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
         # 单位矩阵
         inversH = MathFunction.DecimalMatrix(e)
         g = self.function.evaluate_gradient(x)
+        self.write_logs(f"梯度g=\n{g}")
         s = -inversH * g
         self.set_s(s)
         x0 = x
@@ -681,6 +683,8 @@ class MultidimensionOptimization(OnedimensionOptimization):
             self.write_logs(f"{g}")
             self.write_logs(f"DeltaX=\n{deltaX}")
             self.write_logs(f"DeltaG=\n{deltaG}")
+            if deltaX.frobenius_norm() < self.epsilonx:
+                break
 
             # 计算修正矩阵
             # dfp法
@@ -712,7 +716,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             self.write_logs(f"X*=\n{x}")
             self.write_logs(f"F*={f}")
             self.set_x0_from_decimal_matrix(x)
-            if abs(a) < self.epsilonx and abs((f-f0)) < self.epsilonf:
+            if abs(a) < self.epsilonx or abs((f-f0)) < self.epsilonf:
                 break
         self.write_logs(f"完成：dfp/bfgs优化完成")
         res = [x , f , step]
@@ -821,7 +825,7 @@ class ConstraintOptimization(Problem):
             if self.in_feasible_domain(initPoint):
                 break
         # 随机方向法主流程
-        print(f"初始点为：{initPoint}")
+        self.write_logs(f"初始点为：{initPoint}")
         x = initPoint
         t = 1
         f0 = self.function.evaluate(x)
@@ -932,7 +936,7 @@ class ConstraintOptimization(Problem):
         return self.res
     
     def penalty_interior(self , r , c=0.6, multiDimensionOptimizationMethod=MethodType.powell):
-        print(f"r={r}")
+        self.write_logs(f"r={r}")
         def create_penalty_function(r):
             result = self.function
             for i in self.gu:
@@ -950,7 +954,7 @@ class ConstraintOptimization(Problem):
         penaltyFun = create_penalty_function(r)
         fmin = penaltyFun.evaluate(x)
         step = 0
-        print(f"initPoint x=\n{x}")
+        self.write_logs(f"initPoint x=\n{x}")
         while True:
             step += 1
             r = c*r
@@ -964,7 +968,7 @@ class ConstraintOptimization(Problem):
             x = p.res.realX
             df = abs(f0 - fmin)
             dx = (x0 - x).frobenius_norm()
-            print(f"step={step} , fmin={fmin} , x=\n{x}")
+            self.write_logs(f"step={step} , fmin={fmin} , x=\n{x}")
             if df <= self.epsilonf and dx <= self.epsilonx:
                 break
         self.res = self.Result(x , fmin , step)
