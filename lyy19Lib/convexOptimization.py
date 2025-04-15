@@ -349,8 +349,7 @@ class OnedimensionOptimization(Problem):
         x = self.x0 + a2*self.s
         f2 = self.function.evaluate(x)
         if f2 < f1:
-            while abs(f1-f2) > 10e-10:
-                # print(f"1. a1={a1} , a2={a2}, f1-f2={f1-f2}")
+            while True:
                 step = step * 2
                 a2 = a2 + step
                 f1 = f2
@@ -362,8 +361,7 @@ class OnedimensionOptimization(Problem):
                     break
         else:
             step = -step
-            while abs(f1-f2) > 10e-10:
-                # print(f"2. a1={a1} , a2={a2}, f1-f2={f1-f2}")
+            while True:
                 a1 = a1 + step
                 f2 = f1
                 x = self.x0 + a1*self.s
