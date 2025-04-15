@@ -397,6 +397,14 @@ def test_convexOptimization():
     print(q.gu)
     print(q.res)
 
+    print()
+    print("稳健性测试")
+    f = "{x1^2 + x2^2}//{1 + x1^2}"
+    gu = ["x1 + x2 - 10"]
+    q = ConstraintOptimization(f, gu, [], [4, 4], [0, 0], 0.01, 0.01)
+    q.solve(MethodType.penaltyMethodInterior, 1)
+    print(q.res)
+
 # # 外点法
 #     print()
 #     print("外点法测试")

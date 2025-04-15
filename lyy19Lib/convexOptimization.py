@@ -67,7 +67,7 @@ class Problem:
         if isinstance(function , MathFunction):
             self.function = function
         else:
-            self.function = MathFunction(function)
+            self.function = FractionFunction(function)
         if type(x0) != MathFunction.DecimalMatrix:
             self.x0 = MathFunction.DecimalMatrix([[i] for i in x0]) # 转化为列向量
         else:
@@ -131,7 +131,7 @@ class OnedimensionOptimization(Problem):
             self.write_logs("---------------------------------")
             self.write_logs("当前参数")
             self.write_logs("函数：")
-            self.write_logs(f"{self.function}")
+            # self.write_logs(f"{self.function}")
             self.write_logs("初始点：")
             self.write_logs(f"{self.x0}")
             self.write_logs("搜索方向：")
@@ -312,49 +312,58 @@ class OnedimensionOptimization(Problem):
             return self.quadratic_interpolation(a , b)
 
     def determine_search_interval(self):
-        '''
-        function: 函数
-        x0: 起点
-        t0: 初始步长
-        s: 搜索方向
-        return [a: Decimal , b: Decimal]
-        '''
-        step = Decimal(str(self.epsilonx))/Decimal(100) # 步长
-        # step = Decimal(0.1)
-        a1 = 0
+        """
+        更稳健的一维搜索初始区间查找器
+        用于 powell 或黄金分割等方法前的预处理
+        """
+        step = Decimal(str(self.epsilonx)) / Decimal("100")
+        a1 = Decimal("0")
         a2 = step
-        f1 = self.function.evaluate(self.x0)
-        x = self.x0 + a2*self.s
-        f2 = self.function.evaluate(x)
-        if f2 < f1:
-            while True:
-                print(f"1. f1-f2={f1-f2}")
-                # input()
-                step = step * 2
-                a2 = a2 + step
+        x = self.x0
+        f = self.function.evaluate
+
+        f1 = f(x)
+        f2 = f(x + a2 * self.s)
+
+        max_iter = 500
+        iter_count = 0
+        threshold = Decimal("1e-6")  # 判断下降趋势的容差
+
+        if f2 < f1 - threshold:
+            # 向前推进
+            while iter_count < max_iter:
+                iter_count += 1
+                step *= 2
+                # a1 = a2
+                a2 += step
                 f1 = f2
-                x = self.x0 + a2*self.s
-                print(x)
-                f2 =  self.function.evaluate(x)
-                if f1 > f2:
-                    a1 = a2 - step
-                else:
+                try:
+                    f2 = f(x + a2 * self.s)
+                except:
                     break
+                if not (f2 < f1 - threshold):  # 如果不再下降
+                    break
+            else:
+                raise RuntimeError("搜索区间查找超过最大迭代次数")
         else:
+            # 向负方向推进
             step = -step
-            while True:
-                print(f"2. f1-f2={f1-f2}")
-                # input()
-                a1 = a1 + step
-                f2 = f1
-                x = self.x0 + a1*self.s
-                f1 = self.function.evaluate(x)
-                if f2 > f1:
-                    a2 = a1 - step
-                    step = step * 2
-                else:
+            while iter_count < max_iter:
+                iter_count += 1
+                # a2 = a1
+                a1 += step
+                try:
+                    f2 = f1
+                    f1 = f(x + a1 * self.s)
+                except:
                     break
-        return a1 , a2
+                if not (f1 < f2 - threshold):
+                    break
+                step *= 2  # 扩大搜索范围
+            else:
+                raise RuntimeError("搜索区间查找超过最大迭代次数")
+
+        return a1, a2
 
 
 class MultidimensionOptimization(OnedimensionOptimization):
@@ -370,7 +379,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             self.write_logs("---------------------------------")
             self.write_logs("当前参数")
             self.write_logs("函数：")
-            self.write_logs(f"{self.function}")
+            # self.write_logs(f"{self.function}")
             self.write_logs("初始点：")
             self.write_logs(f"{self.x0}")
             self.write_logs(f"epsilonx = {self.epsilonx}")
@@ -642,7 +651,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
         while True:
             step = step + 1
             deltaG = g
-            s = - inversH * g
+            s = - (inversH * g)
             deltaX = x
             if (transpose(g)*s).frobenius_norm() > 0:
                 s = -g
@@ -949,6 +958,8 @@ class ConstraintOptimization(Problem):
             self.write_logs(f"step={step} , fmin={fmin} , x=\n{x}")
             if df <= Decimal(str(0.000001)) or dx <= Decimal(str(0.001)):
                 break
+        fmin = self.function.evaluate(x)
+        self.write_logs(f"fmin= {fmin}")
         self.res = self.Result(x , fmin , step)
         return self.res
 
