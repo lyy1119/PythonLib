@@ -391,7 +391,7 @@ def test_convexOptimization():
     gu = [
         "5-x1",
     ]
-    q = ConstraintOptimization("10*x1" , gu , [] , [8] , [6] , 0.01 , 0.01)
+    q = ConstraintOptimization("10*x1" , gu , [] , [8] , [6] , 0.001 , 0.001)
 
     q.solve(MethodType.penaltyMethodInterior , 25)
     print(q.gu)

@@ -42,11 +42,12 @@ class Problem:
             self.step = step
             self.realX = deepcopy(X)
             self.realF = deepcopy(F)
-            self.outputF = self.realF.quantize(Decimal("0.1")**outputAccuracy)
+            # self.outputF = self.realF.quantize(Decimal("0.1")**outputAccuracy)
+            self.outputF = self.realF
             self.outputX = deepcopy(X)
-            for i in range(len(self.outputX.data)):
-                for j in range(len(self.outputX.data[0])):
-                    self.outputX.data[i][j] = self.outputX.data[i][j].quantize(Decimal("0.1")**outputAccuracy)
+            # for i in range(len(self.outputX.data)):
+                # for j in range(len(self.outputX.data[0])):
+                    # self.outputX.data[i][j] = self.outputX.data[i][j].quantize(Decimal("0.1")**outputAccuracy)
         def __str__(self):
             s = ''
             s += "=============================\n"
@@ -263,58 +264,34 @@ class OnedimensionOptimization(Problem):
         '''
         jMax: 满足函数值间隔的最大迭代次数
         '''
-        totalStep = 0
-        que = deque([[a , None , None] , None , None , [b , None , None]])   # [[] , [] , [] , []]
+        q = Decimal(0.618)
+        j = 0
         while True:
-            step = 0
-            self.calculate_golden_point(que)
+            j += 1
+            a1 = b-q*(b-a); x1 = self.x0 + a1*self.s; f1=self.function.evaluate(x1)
+            a2 = a+q*(b-a); x2 = self.x0 + a2*self.s; f2=self.function.evaluate(x2)
             while True:
-                step += 1
-                totalStep += 1
-                # self.write_logs(f"迭代：{totalStep}")
-                # self.write_logs(f"A:{que[0][0]}")
-                # self.write_logs(f"X=\n{que[0][1]}")
-                # self.write_logs(f"F={que[0][2]}")
-                # self.write_logs(f"A1:{que[1][0]}")
-                # self.write_logs(f"X=\n{que[1][1]}")
-                # self.write_logs(f"F={que[1][2]}")
-                # self.write_logs(f"A2:{que[2][0]}")
-                # self.write_logs(f"X=\n{que[2][1]}")
-                # self.write_logs(f"F={que[2][2]}")
-                # self.write_logs(f"B:{que[3][0]}")
-                # self.write_logs(f"X=\n{que[3][1]}")
-                # self.write_logs(f"F={que[3][2]}")
-                if que[1][2] > que[2][2]: # F1>F2
-                    # F1高，舍弃A
-                    # A1 , A2 -> A , A1 , A2 =None
-                    # self.write_logs("舍弃A")
-                    que[0] = deepcopy(que[1])
-                    que[1] = deepcopy(que[2])
-                    que[2] = None
-                else: # que[1][3] < que[2][3]
-                    # self.write_logs("舍弃B")
-                    que[3] = deepcopy(que[2])
-                    que[2] = deepcopy(que[1])
-                    que[1] = None
-                self.calculate_golden_point(que)
-                if step > self.maxStep or abs((que[2][2] - que[1][2])) <= self.epsilonf:
+                if f1 > f2:
+                    a = a1; a1=a1; f1=f2
+                    a2=a+q*(b-a); x2=self.x0 + a2*self.s; f2=self.function.evaluate(x2)
+                else:
+                    b=a2; a2=a1; f2=f1
+                    a1=b-q*(b-a); x1=self.x0 + a1*self.s; f1=self.function.evaluate(x1)
+                j += 1
+                if j > 50:
                     break
-            if abs((que[2][0] - que[1][0])) < self.epsilonx:
+                if abs(f2-f1) <= self.epsilonf:
+                    break
+            if abs(a2-a1) <= self.epsilonx:
                 break
             else:
-                que[0] = deepcopy(que[1])
-                que[1] = None
-                que[3] = deepcopy(que[2])
-                que[2] = None
-        if que[1][2] > que[2][2]:
-            res = que[2]
+                a=a1; b=a2
+        if f1<f2:
+            a = a1; f = f1; x = self.x0 + a1*self.s
         else:
-            res = que[1]
-        self.write_logs("完成；黄金分割优化完成")
-        ResultRes = deepcopy(res[1:3:1])
-        ResultRes.append(step)
-        self.res = self.Result(ResultRes[0] , ResultRes[1] , ResultRes[2])
-        return res
+            a = a2; f = f2; x = self.x0 + a2*self.s
+        self.res = self.Result(x , f , j)
+        return [a, x, f]
 
     def get_search_interval(self):
         return self.determine_search_interval()
@@ -342,7 +319,7 @@ class OnedimensionOptimization(Problem):
         s: 搜索方向
         return [a: Decimal , b: Decimal]
         '''
-        step = Decimal(str(self.epsilonx))/Decimal(1000) # 步长
+        step = Decimal(str(self.epsilonx))/Decimal(100) # 步长
         a1 = 0
         a2 = step
         f1 = self.function.evaluate(self.x0)
@@ -940,8 +917,8 @@ class ConstraintOptimization(Problem):
             if self.in_feasible_domain(x):
                 break
         # 计算初始
-        r = r / c
         penaltyFun = create_penalty_function(r)
+        r = r / c
         fmin = penaltyFun.evaluate(x)
         step = 0
         self.write_logs(f"initPoint x=\n{x}")
