@@ -68,6 +68,18 @@ class MathFunction:
             if type(li[0][0]) != Decimal:
                 li = [[Decimal(str(j)) for j in i] for i in li]
             super().__init__(li, check)
+        
+        def __truediv__(self , other):
+            from copy import deepcopy
+            newData = deepcopy(self.data)
+            for i in range(self.row):
+                for j in range(self.col):
+                    try:
+                        newData[i][j] /= other
+                    except:
+                        newData[i][j] = Decimal(inf)
+            return type(self)(newData)
+
         def inverse(self):
             '''
             不可逆操作，若要保留原矩阵，使用deepcopy

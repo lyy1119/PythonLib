@@ -320,6 +320,7 @@ class OnedimensionOptimization(Problem):
         return [a: Decimal , b: Decimal]
         '''
         step = Decimal(str(self.epsilonx))/Decimal(100) # 步长
+        # step = Decimal(0.1)
         a1 = 0
         a2 = step
         f1 = self.function.evaluate(self.x0)
@@ -327,10 +328,13 @@ class OnedimensionOptimization(Problem):
         f2 = self.function.evaluate(x)
         if f2 < f1:
             while True:
+                print(f"1. f1-f2={f1-f2}")
+                # input()
                 step = step * 2
                 a2 = a2 + step
                 f1 = f2
                 x = self.x0 + a2*self.s
+                print(x)
                 f2 =  self.function.evaluate(x)
                 if f1 > f2:
                     a1 = a2 - step
@@ -339,6 +343,8 @@ class OnedimensionOptimization(Problem):
         else:
             step = -step
             while True:
+                print(f"2. f1-f2={f1-f2}")
+                # input()
                 a1 = a1 + step
                 f2 = f1
                 x = self.x0 + a1*self.s
@@ -902,22 +908,27 @@ class ConstraintOptimization(Problem):
         self.res = self.Result(x , f , step)
         return self.res
     
-    def penalty_interior(self , r , c=0.6, multiDimensionOptimizationMethod=MethodType.powell):
+    def penalty_interior(self , r , c=0.6, multiDimensionOptimizationMethod=MethodType.powell, initPoint=None):
         self.write_logs(f"r={r}")
-        def create_penalty_function(r):
-            result = self.function
+        def create_penalty_function(fun, r):
+            result = deepcopy(fun)
+            r = FractionFunction(str(r))
             for i in self.gu:
                 result = result - r/i
                 # result.simplify()
             return result
         c = Decimal(str(c))
         r = Decimal(str(r))
-        while True:
-            x = self.gen_init_point()
-            if self.in_feasible_domain(x):
-                break
+        if initPoint:
+            initPoint = [[i] for i in initPoint]
+            x = MathFunction.DecimalMatrix(initPoint)
+        else:
+            while True:
+                x = self.gen_init_point()
+                if self.in_feasible_domain(x):
+                    break
         # 计算初始
-        penaltyFun = create_penalty_function(r)
+        penaltyFun = create_penalty_function(self.function, r)
         r = r / c
         fmin = penaltyFun.evaluate(x)
         step = 0
@@ -927,7 +938,7 @@ class ConstraintOptimization(Problem):
             r = c*r
             x0 = x
             f0 = fmin
-            penaltyFun = create_penalty_function(r)
+            penaltyFun = create_penalty_function(self.function, r)
             p = MultidimensionOptimization(penaltyFun , x0 , self.epsilonx , self.epsilonf)
             p.solve(multiDimensionOptimizationMethod)
 
@@ -936,7 +947,7 @@ class ConstraintOptimization(Problem):
             df = abs(f0 - fmin)
             dx = (x0 - x).frobenius_norm()
             self.write_logs(f"step={step} , fmin={fmin} , x=\n{x}")
-            if df <= self.epsilonf and dx <= self.epsilonx:
+            if df <= Decimal(str(0.000001)) or dx <= Decimal(str(0.001)):
                 break
         self.res = self.Result(x , fmin , step)
         return self.res
