@@ -943,22 +943,22 @@ class ConstraintOptimization(Problem):
         r = r / c
         fmin = penaltyFun.evaluate(x)
         step = 0
-        self.write_logs(f"initPoint x=\n{x}")
+        self.write_logs(f"initPoint x=\n{x}, penaltyFunction={fmin}")
         while True:
             step += 1
             r = c*r
             x0 = x
             f0 = fmin
             penaltyFun = create_penalty_function(self.function, r)
-            p = MultidimensionOptimization(penaltyFun , x0 , self.epsilonx , self.epsilonf)
-            p.solve(multiDimensionOptimizationMethod)
-
-            fmin = p.res.realF
-            x = p.res.realX
-            df = abs(f0 - fmin)
+            p = MultidimensionOptimization(penaltyFun , x , self.epsilonx , self.epsilonf)
+            x, fmin, _ = p.solve(multiDimensionOptimizationMethod)
+            try:
+                df = abs((f0 - fmin)/f0)
+            except:
+                df = abs((f0 - fmin))
             dx = (x0 - x).frobenius_norm()
             self.write_logs(f"step={step} , fmin={fmin} , x=\n{x}")
-            if df <= Decimal(str(0.000001)) or dx <= Decimal(str(0.001)):
+            if (df <= Decimal(str(0.00001)) or dx <= Decimal(str(0.001))):
                 break
         fmin = self.function.evaluate(x)
         self.write_logs(f"fmin= {fmin}")
