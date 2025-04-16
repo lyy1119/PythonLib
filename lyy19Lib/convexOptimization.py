@@ -291,13 +291,11 @@ class OnedimensionOptimization(Problem):
         self.res = self.Result(x , f , j)
         return [a, x, f]
 
-    def get_search_interval(self):
-        return self.determine_search_interval()
-
     def solve(self , method=MethodType.goldenSection):
         self.write_logs("操作：开始一维优化")
         self.write_logs("操作：确定搜索区间")
-        a , b = self.get_search_interval()
+        self.add_log_indent()
+        a , b = self.determine_search_interval()
         self.write_logs(f"完成：搜索区间为[{a} , {b}]")
         '''
         返回 [a , x , f]
