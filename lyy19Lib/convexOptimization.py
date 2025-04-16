@@ -327,7 +327,11 @@ class OnedimensionOptimization(Problem):
 
         max_iter = 500
         iter_count = 0
-        threshold = Decimal("1e-6")  # 判断下降趋势的容差
+        threshold = Decimal("0")  # 判断下降趋势的容差
+        if f1 == f2:
+            a2 = a2 + step
+            f1 = f(x)
+            f2 = f(x+ a2*self.s)
 
         if f2 < f1 - threshold:
             # 向前推进
@@ -668,9 +672,9 @@ class MultidimensionOptimization(OnedimensionOptimization):
             self.write_logs(f"X*=\n{x}")
             self.write_logs(f"F*={f}")
 
-            deltaX = deltaX - x
+            deltaX = x - deltaX
             g = self.function.evaluate_gradient(x)
-            deltaG = deltaG - g
+            deltaG = g - deltaG
 
             self.write_logs(f"迭代：{step}")
             self.write_logs(f"当前点的梯度向量为:")
