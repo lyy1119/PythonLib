@@ -280,9 +280,17 @@ class OnedimensionOptimization(Problem):
                 j += 1
                 if j > 50:
                     break
-                if abs(f2-f1) <= self.epsilonf:
+                try:
+                    exitSign = abs((f2-f1)/f1)
+                except:
+                    exitSign = abs(f2-f1)
+                if exitSign <= self.epsilonf:
                     break
-            if abs(a2-a1) <= self.epsilonx:
+            try:
+                exitSign = abs((a2 - a1)/a1)
+            except:
+                exitSign = abs(a2 - a1)
+            if exitSign <= self.epsilonx:
                 break
             else:
                 a=a1; b=a2
