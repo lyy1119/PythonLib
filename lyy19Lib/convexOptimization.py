@@ -264,7 +264,7 @@ class OnedimensionOptimization(Problem):
         '''
         jMax: 满足函数值间隔的最大迭代次数
         '''
-        q = Decimal(0.618)
+        q = (Decimal(5).sqrt() - Decimal(1))/Decimal(2)
         j = 0
         while True:
             j += 1
@@ -272,7 +272,7 @@ class OnedimensionOptimization(Problem):
             a2 = a+q*(b-a); x2 = self.x0 + a2*self.s; f2=self.function.evaluate(x2)
             while True:
                 if f1 > f2:
-                    a = a1; a1=a1; f1=f2
+                    a = a1; a1=a2; f1=f2
                     a2=a+q*(b-a); x2=self.x0 + a2*self.s; f2=self.function.evaluate(x2)
                 else:
                     b=a2; a2=a1; f2=f1
@@ -876,7 +876,7 @@ class ConstraintOptimization(Problem):
             df = 0
             for i in points:
                 df = df + (fc - i[1])**2
-            df = sqrt(df/2/self.function.dimension)
+            df = (df/2/self.function.dimension).sqrt()
             if df < self.epsilonf:
                 break
             else:
