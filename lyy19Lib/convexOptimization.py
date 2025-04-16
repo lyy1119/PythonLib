@@ -168,16 +168,6 @@ class OnedimensionOptimization(Problem):
             if i[2] == None:
                 i[2] = self.evaluate_function(i[1]) # 计算F(X)
 
-    def calculate_golden_point(self , queue: deque):
-        a = queue[0][0]
-        b = queue[3][0]
-        q = Decimal("0.618")
-        if queue[1] == None: # 点没有被计算
-            queue[1] = [b - q*(b-a) , None , None]
-        if queue[2] == None:
-            queue[2] = [a + q*(b-a) , None , None]
-        self.evaluate_point(queue)
-    
     def quadratic_interpolation(self , a: Decimal , b: Decimal):
         # 计算初始点
         a1 = a
@@ -324,7 +314,7 @@ class OnedimensionOptimization(Problem):
         更稳健的一维搜索初始区间查找器
         用于 powell 或黄金分割等方法前的预处理
         """
-        step = Decimal(str(self.epsilonx)) / Decimal("100")
+        step = Decimal(str(self.epsilonx)) / Decimal("1000")
         a1 = Decimal("0")
         a2 = step
         x = self.x0
