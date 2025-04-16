@@ -644,19 +644,18 @@ class MultidimensionOptimization(OnedimensionOptimization):
         step = 0
         x = self.x0
         # 第一步使用负梯度方向搜索,手动
+        # 生成单位矩阵
         identityMatrix = []
         for i in range(self.function.dimension):
             ei = [0 for _ in range(self.function.dimension)]
             ei[i] = 1
             identityMatrix.append(ei)
-        # 单位矩阵
         identityMatrix = MathFunction.DecimalMatrix(identityMatrix)
         inversH = deepcopy(identityMatrix)
         g = self.function.evaluate_gradient(x)
         while True:
-            step = step + 1
-            deltaG = g
             s = - (inversH * g)
+            deltaG = g
             deltaX = x
             if (transpose(g)*s).frobenius_norm() > 0:
                 s = -g
@@ -666,13 +665,11 @@ class MultidimensionOptimization(OnedimensionOptimization):
             self.set_x0_from_decimal_matrix(deltaX)
             self.set_s(s)
             a, x, f = super().solve(self.oneDimensionProblemMethod)
-            self.set_x0_from_decimal_matrix(x)
-
             self.write_logs(f"本次迭代搜索结果:")
             self.write_logs(f"A={a}")
             self.write_logs(f"X*=\n{x}")
             self.write_logs(f"F*={f}")
-
+            step = step + 1
             deltaX = x - deltaX
             g = self.function.evaluate_gradient(x)
             deltaG = g - deltaG
@@ -683,7 +680,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             self.write_logs(f"DeltaX=\n{deltaX}")
             self.write_logs(f"DeltaG=\n{deltaG}")
 
-            if g.frobenius_norm() < self.epsilonx and deltaX.frobenius_norm() < self.epsilonx:
+            if g.frobenius_norm() <= self.epsilonx and deltaX.frobenius_norm() <= self.epsilonx:
                 break
             if step > self.maxStep:
                 break
