@@ -296,6 +296,7 @@ class OnedimensionOptimization(Problem):
         self.write_logs("操作：确定搜索区间")
         self.add_log_indent()
         a , b = self.determine_search_interval()
+        self.reduce_log_indent()
         self.write_logs(f"完成：搜索区间为[{a} , {b}]")
         '''
         返回 [a , x , f]
@@ -321,7 +322,7 @@ class OnedimensionOptimization(Problem):
         f1 = f(x)
         f2 = f(x + a2 * self.s)
 
-        max_iter = 500
+        max_iter = 5000
         iter_count = 0
         threshold = Decimal("0")  # 判断下降趋势的容差
         if f1 == f2:
