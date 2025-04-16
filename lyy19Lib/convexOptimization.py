@@ -329,6 +329,7 @@ class OnedimensionOptimization(Problem):
         iter_count = 0
         threshold = Decimal("0")  # 判断下降趋势的容差
         if f1 == f2:
+            self.write_logs("f1=f2,移动a2，再加一个步长")
             a2 = a2 + step
             f1 = f(x)
             f2 = f(x+ a2*self.s)
@@ -337,16 +338,12 @@ class OnedimensionOptimization(Problem):
             # 向前推进
             while iter_count < max_iter:
                 iter_count += 1
-                step *= 2
-                # a1 = a2
-                a2 += step
-                f1 = f2
-                try:
-                    f2 = f(x + a2 * self.s)
-                except:
-                    break
+                step *= 2; a2 += step; f1=f2
+                f2 = f(x + a2 * self.s)
                 if not (f2 < f1 - threshold):  # 如果不再下降
                     break
+                else:
+                    a1 = a2 - step
             else:
                 raise RuntimeError("搜索区间查找超过最大迭代次数")
         else:
@@ -354,19 +351,15 @@ class OnedimensionOptimization(Problem):
             step = -step
             while iter_count < max_iter:
                 iter_count += 1
-                # a2 = a1
-                a1 += step
-                try:
-                    f2 = f1
-                    f1 = f(x + a1 * self.s)
-                except:
-                    break
+                a1 += step; f2 = f1;
+                f1 = f(x + a1*self.s)
                 if not (f1 < f2 - threshold):
                     break
-                step *= 2  # 扩大搜索范围
+                else:
+                    a2 = a1 - step
+                    step *= 2  # 扩大搜索范围
             else:
                 raise RuntimeError("搜索区间查找超过最大迭代次数")
-
         return a1, a2
 
 
