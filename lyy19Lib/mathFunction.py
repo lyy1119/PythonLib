@@ -20,7 +20,7 @@ from .genericClass import transpose
 from .genericClass import Fraction as GenericFraction
 from collections import deque
 from copy import deepcopy
-from math import sqrt, inf
+from math import inf
 from enum import Enum
 import math
 import re
@@ -70,14 +70,17 @@ class MathFunction:
             super().__init__(li, check)
         
         def __truediv__(self , other):
+            if type(other) != Decimal:
+                    other = Decimal(other)
             from copy import deepcopy
             newData = deepcopy(self.data)
             for i in range(self.row):
                 for j in range(self.col):
                     try:
                         newData[i][j] /= other
-                    except:
+                    except ZeroDivisionError:
                         newData[i][j] = Decimal(inf)
+                        # newData[i][j] = Decimal(inf)
             return type(self)(newData)
 
         def inverse(self):
@@ -130,7 +133,7 @@ class MathFunction:
             for row in self.data:
                 for i in row:
                     res = res + i**2
-            return Decimal(str(sqrt(res)))
+            return res.sqrt()
 
         def __rmul__(self, other):
             if type(other) == float:
