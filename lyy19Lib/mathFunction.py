@@ -767,3 +767,77 @@ class FractionFunction(GenericFraction , MathFunction):
             newDenominator[newKey] = newValue
         self.numerator.func = newNumerator
         self.denominator.func = newDenominator
+
+# 妥协之计，只接受传FractionFunction
+class LnFunction(MathFunction):
+    def __init__(self, fractionFunction: FractionFunction):
+        if type(fractionFunction) == str:
+            fractionFunction = FractionFunction(fractionFunction)
+        self.function = fractionFunction
+        self.gradient = None
+        self.dimension = self.function.dimension
+        self.hessianMatrix = None
+
+    def evaluate(self, x):
+        return self.function.evaluate(x).ln()
+    
+    def derivative(self, xIndex=0): # 求偏导
+        # 对ln求偏导，即 ln内分之1 * ln内函数偏导
+        return (FractionFunction("1") / self.function) * self.function.derivative(xIndex)
+    
+    def gradient_matrix(self, forceUpdate=False):
+        if self.gradient and (not forceUpdate):
+            return self.gradient
+        result = []
+        for i in range(self.dimension):
+            result.append([self.derivative(i)])
+        self.gradient = GenericMatrix(result)
+        return self.gradient
+    
+    def __str__(self):
+        return f"ln({self.function})"
+    # 其他的应该都能兼容
+
+class AddFunction(MathFunction):
+    def __init__(self, *args):
+        '''
+        args 传入函数，函数的类型只能是FractionFunction或者LnFunction
+        '''
+        self.function = []
+        self.gradient = []
+        for i in args:
+            if isinstance(i, LnFunction) or isinstance(i, FractionFunction):
+                self.function.append(i)
+            else:
+                raise ValueError(f"函数{i}\n不是FractionFunction或者LnFunction.")
+    
+    def evaluate(self, x):
+        result = Decimal(0)
+        for i in self.function:
+            result = result + i.evaluate(x)
+        return result
+    
+    def derivative(self, xIndex=0):
+        # 一堆函数的偏导相加
+        result = FractionFunction("0")
+        for i in self.function:
+            result = result + i.derivate(xIndex)
+        return result
+
+    def __str__(self):
+        result = 'f(X)='
+        sign = ''
+        for i in self.function:
+            result = result + f"{sign}({i})"
+            sign = "+"
+        return result
+
+    def __add__(self, other):
+        result = deepcopy(self)
+        if isinstance(other, LnFunction) or isinstance(other, FractionFunction):
+            result.function.append(deepcopy(other))
+        elif isinstance(other, AddFunction):
+            result.function = result.function + other.function
+        else:
+            raise ValueError(f"不支持的类型求和：type{type(other)}")
+        return result
