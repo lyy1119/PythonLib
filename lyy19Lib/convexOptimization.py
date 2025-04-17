@@ -1,12 +1,10 @@
-from .mathFunction import MathFunction
-from .mathFunction import transpose
+from .mathFunction import MathFunction, FractionFunction, AddFunction, LnFunction, transpose
 from decimal import Decimal
 from enum import Enum
 from collections import deque
 from copy import deepcopy
 from decimal import Decimal, getcontext
 from datetime import datetime
-from .mathFunction import FractionFunction
 from random import random
 import numpy as np
 from math import sqrt, inf
@@ -910,12 +908,12 @@ class ConstraintOptimization(Problem):
     
     def penalty_interior(self , r , c=0.6, multiDimensionOptimizationMethod=MethodType.powell, initPoint=None):
         self.write_logs(f"r={r}")
-        def create_penalty_function(fun, r):
-            result = deepcopy(fun)
-            r = FractionFunction(str(r))
+        def create_penalty_function(fun: FractionFunction, r):
+            result = AddFunction(fun)
+            print(f"测试,fun={fun}, fun.dimension={fun.dimension}")
+            r = Decimal(str(r))
             for i in self.gu:
-                result = result - r/i
-                # result.simplify()
+                result = result - LnFunction(-i)*r
             return result
         c = Decimal(str(c))
         r = Decimal(str(r))
