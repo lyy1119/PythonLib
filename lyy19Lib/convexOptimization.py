@@ -94,7 +94,7 @@ class Problem:
     def write_logs(self , s: str):
         s = s.split("\n")
         s =  '\n'.join('> ' * (self.outputIndent) + line for line in s)
-        print(s)
+        # print(s)
         self.logs = self.logs + s + "\n"
 
     def set_x0_from_list(self , x0):

@@ -792,7 +792,8 @@ class LnFunction(MathFunction):
 
     def evaluate(self, x):
         if self.function.evaluate(x) <= 0:
-            return Decimal("-inf")*self.coefficient # 或 float('inf')
+            return Decimal("-1")*Decimal("1e20")*self.coefficient # 或 使用一个较大值代替inf
+            # return Decimal("-inf")*self.coefficient # 或 float('inf')
         return self.function.evaluate(x).ln()*self.coefficient
     
     def derivative(self, xIndex=0): # 求偏导
