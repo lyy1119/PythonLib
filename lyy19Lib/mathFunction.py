@@ -698,6 +698,9 @@ class FractionFunction(GenericFraction , MathFunction):
         self.numerator.dimension = newDimension
         self.denominator.dimension = newDimension
 
+    def set_dimension(self, i):
+        self.update_dimension(i)
+
     def __truediv__(self, other):
         if isinstance(other , FractionFunction):
             return super().__truediv__(other)
@@ -782,6 +785,10 @@ class LnFunction(MathFunction):
         self.dimension = self.function.dimension
         self.hessianMatrix = None
         self.coefficient = Decimal(1)
+
+    def set_dimension(self, i):
+        self.function.dimension = i
+        return super().set_dimension(i)
 
     def evaluate(self, x):
         if self.function.evaluate(x) <= 0:
@@ -876,7 +883,7 @@ class AddFunction(MathFunction):
         maxDimension = result.dimension
         for i in result.function:
             maxDimension = max(maxDimension, i.dimension)
-        self.set_dimension(maxDimension)
+        result.set_dimension(maxDimension)
         return result
     
     def __sub__(self, other):
