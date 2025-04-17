@@ -910,7 +910,6 @@ class ConstraintOptimization(Problem):
         self.write_logs(f"r={r}")
         def create_penalty_function(fun: FractionFunction, r):
             result = AddFunction(fun)
-            print(f"测试,fun={fun}, fun.dimension={fun.dimension}")
             r = Decimal(str(r))
             for i in self.gu:
                 result = result - LnFunction(-i)*r
