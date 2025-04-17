@@ -311,7 +311,7 @@ class OnedimensionOptimization(Problem):
         更稳健的一维搜索初始区间查找器
         用于 powell 或黄金分割等方法前的预处理
         """
-        step = Decimal(str(self.epsilonx)) / Decimal("1000")
+        step = Decimal(str(self.epsilonx)) / Decimal("100")
         a1 = Decimal("0")
         a2 = step
         x = self.x0
