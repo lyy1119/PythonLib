@@ -828,6 +828,7 @@ class AddFunction(MathFunction):
         '''
         self.function = []
         self.gradient = []
+        self.hessianMatrix = []
         maxDimension = 0
         for i in args:
             if isinstance(i, LnFunction) or isinstance(i, FractionFunction):

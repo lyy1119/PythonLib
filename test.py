@@ -402,7 +402,7 @@ def test_convexOptimization():
     f = "{x1^2 + x2^2}//{1 + x1^2}"
     gu = ["x1 + x2 - 10"]
     q = ConstraintOptimization(f, gu, [], [4, 4], [0, 0], 0.01, 0.01)
-    q.solve(MethodType.penaltyMethodInterior, 1)
+    q.solve(MethodType.penaltyMethodInterior, 1, 0.09)
     print(q.res)
 
 # # 外点法
