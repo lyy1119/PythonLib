@@ -482,6 +482,9 @@ class MathFunction:
             self.hessian_matrix()
         res = [[self.hessianMatrix.data[i][j].evaluate(x) for j in range(self.dimension)] for i in range(self.dimension)]
         return MathFunction.DecimalMatrix(res)
+    
+    def set_dimension(self, i: int):
+        self.dimension = i
 
 class ExtendedMathFunction(MathFunction):
     def __init__(self, polynomial, rawMode=False, raw={}):
@@ -691,6 +694,7 @@ class FractionFunction(GenericFraction , MathFunction):
         return type(self)(numerator , denominator)
 
     def update_dimension(self , newDimension):
+        self.dimension = newDimension
         self.numerator.dimension = newDimension
         self.denominator.dimension = newDimension
 
@@ -777,8 +781,11 @@ class LnFunction(MathFunction):
         self.gradient = None
         self.dimension = self.function.dimension
         self.hessianMatrix = None
+        self.coefficient = Decimal(1)
 
     def evaluate(self, x):
+        if self.function.evaluate(x) <= 0:
+            return Decimal("1e10")  # 或 float('inf')
         return self.function.evaluate(x).ln()
     
     def derivative(self, xIndex=0): # 求偏导
@@ -795,7 +802,23 @@ class LnFunction(MathFunction):
         return self.gradient
     
     def __str__(self):
-        return f"ln({self.function})"
+        return f"ln({self.coefficient}*{self.function})"
+    
+    def __mul__(self, other):
+        result = deepcopy(self)
+        if isinstance(other, int):
+            result.coefficient = result.coefficient*other
+        elif isinstance(other, float):
+            other = Decimal(str(other))
+            result.coefficient = result.coefficient * other
+        elif isinstance(other, Decimal):
+            result.coefficient = result.coefficient * other
+        else:
+            raise ValueError(f"不支持的相乘操作，对于ln函数只支持乘以实数，当前相乘变量类型为:{type(other)}")
+        return result
+        
+    def __rmul__(self, other):
+        return self*other
     # 其他的应该都能兼容
 
 class AddFunction(MathFunction):
@@ -805,11 +828,16 @@ class AddFunction(MathFunction):
         '''
         self.function = []
         self.gradient = []
+        maxDimension = 0
         for i in args:
             if isinstance(i, LnFunction) or isinstance(i, FractionFunction):
                 self.function.append(i)
+                maxDimension = max(maxDimension, i.dimension)
             else:
                 raise ValueError(f"函数{i}\n不是FractionFunction或者LnFunction.")
+        self.dimension = maxDimension
+        for i in self.function:
+            i.set_dimension(self.dimension)
     
     def evaluate(self, x):
         result = Decimal(0)
@@ -821,8 +849,12 @@ class AddFunction(MathFunction):
         # 一堆函数的偏导相加
         result = FractionFunction("0")
         for i in self.function:
-            result = result + i.derivate(xIndex)
+            result = result + i.derivative(xIndex)
         return result
+    
+    def set_dimension(self, newDimension):
+        for i in self.function:
+            i.set_dimension(newDimension)
 
     def __str__(self):
         result = 'f(X)='
@@ -840,4 +872,12 @@ class AddFunction(MathFunction):
             result.function = result.function + other.function
         else:
             raise ValueError(f"不支持的类型求和：type{type(other)}")
+        maxDimension = result.dimension
+        for i in result.function:
+            maxDimension = max(maxDimension, i.dimension)
+        self.set_dimension(maxDimension)
         return result
+    
+    def __sub__(self, other):
+        other = other*(-1)
+        return self+other
