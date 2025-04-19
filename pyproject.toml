@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lyy19Lib"
-version = "1.0.0-alpha.1"
+version = "2.0.0-alpha.1"
 readme = "README.md"
 description = "各种函数和类库"
 authors = [{name = "lyy19", email = "lyy2286301015@126.com"}]
