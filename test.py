@@ -272,13 +272,13 @@ def test_convexOptimization():
 
 # 黄金分割测试
     print("黄金分割法测试")
-    q = OnedimensionOptimization(
-        "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
-        [2 , 2],
-        [0.707 , 0.707],
-        0.1,
-        0.15,
-    )
+    q = OnedimensionOptimization({
+        "function"  : "x1^2 + x2^2 - 8*x1 - 12*x2 + 52",
+        "x0"        : [2 , 2],
+        "s"         : [0.707 , 0.707],
+        "epsilonx"  : 0.1,
+        "epsilonf"  : 0.15,
+    })
     q.searchInterval = [Decimal(-3) , Decimal(5)]
     q.solve(MethodType.goldenSection)
     print(q.res)
@@ -290,44 +290,44 @@ def test_convexOptimization():
 
 # 坐标轮换测试
     print("坐标轮换法测试.")
-    q = MultidimensionOptimization(
-        "4 + 4.5*x1 - 4*x2 + x1^2 + 2*x2^2 - 2*x1*x2 + x1^4 - 2*x1^2*x2",
-        [0 , 0],
-        0.1,
-        0.1
-    )
+    q = MultidimensionOptimization({
+        "function"  : "4 + 4.5*x1 - 4*x2 + x1^2 + 2*x2^2 - 2*x1*x2 + x1^4 - 2*x1^2*x2",
+        "x0"        : [0 , 0],
+        "epsilonx"  : 0.1,
+        "epsilonf"  : 0.1
+    })
     q.solve()
     print(q.res)
 
 
-    q = MultidimensionOptimization(
-        "x1^2 + 2*x2^2",
-        [0 , 0],
-        0.01,
-        0.01
-    )
+    q = MultidimensionOptimization({
+        "function"  : "x1^2 + 2*x2^2",
+        "x0"        : [0 , 0],
+        "epsilonx"  : 0.01,
+        "epsilonf"  : 0.01
+    })
     q.solve(method=MethodType.gradientDescent)
     print(q.res)
 
 # 阻尼牛顿法
     print("阻尼牛顿法测试.")
-    q = MultidimensionOptimization(
-        "x1^2 - x1*x2 + x2^2 + 2*x1 - 4*x2",
-        [2 , 2],
-        0.01,
-        0.01
-    )
+    q = MultidimensionOptimization({
+        "function"  : "x1^2 - x1*x2 + x2^2 + 2*x1 - 4*x2",
+        "x0"        : [2 , 2],
+        "epsilonx"  : 0.01,
+        "epsilonf"  : 0.01
+    })
     q.solve(method=MethodType.dampedNewton)
     print(q.res)
 
 # 共轭方向法
     print("共轭方向法测试")
-    q = MultidimensionOptimization(
-        "2*x1^2 + 2*x1*x2 + 2*x2^2",
-        [10 , 10],
-        0.01,
-        0.01
-    )
+    q = MultidimensionOptimization({
+        "function"  : "2*x1^2 + 2*x1*x2 + 2*x2^2",
+        "x0"        : [10 , 10],
+        "epsilonx"  : 0.01,
+        "epsilonf"  : 0.01
+    })
     q.oneDimensionProblemMethod = MethodType.quadraticInterpolation
     q.solve(method=MethodType.conjugateDirection)
     print(q.res)
@@ -335,23 +335,23 @@ def test_convexOptimization():
 
 # powell
     print("powell法测试")
-    q = MultidimensionOptimization(
-        "11*x1^2 + 11*x2^2 + 18*x1*x2 - 100*x1 - 100*x2 + 250",
-        [0 , 0],
-        0.01,
-        0.01
-    )
+    q = MultidimensionOptimization({
+        "function"  : "11*x1^2 + 11*x2^2 + 18*x1*x2 - 100*x1 - 100*x2 + 250",
+        "x0"        : [0 , 0],
+        "epsilonx"  : 0.01,
+        "epsilonf"  : 0.01
+    })
     q.solve(method=MethodType.powell)
     print(q.res)
 
 # dfp
     print("dfp法测试")
-    q = MultidimensionOptimization(
-        "4*x1^2 + x2^2 - 40*x1 - 12*x2 + 136",
-        [8 , 9],
-        0.001,
-        0.01
-    )
+    q = MultidimensionOptimization({
+        "function"  : "4*x1^2 + x2^2 - 40*x1 - 12*x2 + 136",
+        "x0"        : [8 , 9],
+        "epsilonx"  : 0.001,
+        "epsilonf"  : 0.01
+    })
     # q.oneDimensionProblemMethod=MethodType.quadraticInterpolation
     q.solve(method=MethodType.dfp)
     print(q.res)
@@ -368,7 +368,15 @@ def test_convexOptimization():
         "-x1",
         "-x2"
     ]
-    q = ConstraintOptimization("1-2*x1-x2^2" , gu , [] , [3,3] , [0 , 0] , 0.00001 , 0.00001)
+    q = ConstraintOptimization({
+        "function"  : "1-2*x1-x2^2",
+        "gu"        : gu,
+        "hv"        : [],
+        "upLimit"   : [3,3],
+        "lowLimit"  : [0 , 0],
+        "epsilonx"  : 0.00001,
+        "epsilonf"  : 0.00001
+        })
     q.solve(MethodType.stochasticDirectionMethod)
     print(q.res)
 
@@ -381,7 +389,15 @@ def test_convexOptimization():
         "-[x2+30]",
         "x1^2-x2^2-6400"
     ]
-    q = ConstraintOptimization("[x1+20]^3 + [x2+20]^2" , gu , [] , [65 , 65] , [-10 , 10] , 0.001 , 0.001)
+    q = ConstraintOptimization({
+        "function"  : "[x1+20]^3 + [x2+20]^2",
+        "gu"        : gu,
+        "hv"        : [],
+        "upLimit"   : [65 , 65],
+        "lowLimit"  : [-10 , 10],
+        "epsilonx"  : 0.001,
+        "epsilonf"  : 0.001
+        })
     q.solve(MethodType.compositeMethod)
     print(q.res)
 
@@ -391,7 +407,15 @@ def test_convexOptimization():
     gu = [
         "5-x1",
     ]
-    q = ConstraintOptimization("10*x1" , gu , [] , [8] , [6] , 0.001 , 0.001)
+    q = ConstraintOptimization({
+        "function"  : "10*x1",
+        "gu"        : gu,
+        "hv"        : [],
+        "upLimit"   : [8],
+        "lowLimit"  : [6],
+        "epsilonx"  : 0.001,
+        "epsilonf"  : 0.001
+        })
 
     q.solve(MethodType.penaltyMethodInterior , 25)
     print(q.gu)
@@ -401,7 +425,15 @@ def test_convexOptimization():
     print("稳健性测试")
     f = "{x1^2 + x2^2}//{1 + x1^2}"
     gu = ["x1 + x2 - 10"]
-    q = ConstraintOptimization(f, gu, [], [4, 4], [0, 0], 0.01, 0.01)
+    q = ConstraintOptimization({
+        "function"  : f,
+        "gu"        : gu,
+        "hv"        : [],
+        "upLimit"   : [4, 4],
+        "lowLimit"  : [0, 0],
+        "epsilonx"  : 0.01,
+        "epsilonf"  : 0.01
+        })
     q.solve(MethodType.penaltyMethodInterior, 1, 0.09)
     print(q.res)
 

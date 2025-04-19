@@ -56,12 +56,22 @@ class Problem:
             s +=f"函数值F={self.outputF}\n"
             s += "=============================\n"
             return s
-    def __init__(self , function: str , x0: list , maxStep=100):
+    def __init__(self , parameter: dict):
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
         maxStep 最大迭代步长 默认值1000
         '''
+        try:
+            function    = parameter["function"]
+            x0          = parameter["x0"]
+        except:
+            raise ValueError("传参不完整")
+        if "maxStep" in parameter.keys():
+            maxStep = parameter["maxStep"]
+        else:
+            maxStep = 100
+
         if isinstance(function , MathFunction):
             self.function = function
         else:
@@ -104,8 +114,7 @@ class Problem:
         self.x0 = x0
 
 class OnedimensionOptimization(Problem):
-
-    def __init__(self, function: MathFunction, x0: list, s: list , epsilonx: float , epsilonf: float , maxStep=100):
+    def __init__(self, parameter: dict):
         '''
         function = x1^1 + 3*x2^2 + ...
         x0 = [1,2,3 ...]
@@ -114,7 +123,13 @@ class OnedimensionOptimization(Problem):
         epsilonf 必须传入
         epsilonx 必须传入
         '''
-        super().__init__(function, x0 , maxStep)
+        try:
+            epsilonx    = parameter["epsilonx"]
+            epsilonf    = parameter["epsilonf"]
+            s           = parameter["s"]
+        except:
+            raise ValueError("传入参数不完整")
+        super().__init__(parameter=parameter)
 
         self.s = MathFunction.DecimalMatrix([[i] for i in s])
         self.searchInterval = [None , None] # 应该为decimal
@@ -359,9 +374,10 @@ class OnedimensionOptimization(Problem):
 
 
 class MultidimensionOptimization(OnedimensionOptimization):
-    def __init__(self, function, x0, epsilonx, epsilonf , maxStep=100):
-        s = [1] # 防报错用
-        super().__init__(function, x0, s, epsilonx, epsilonf , maxStep)
+    # def __init__(self, function, x0, epsilonx, epsilonf , maxStep=100):
+    def __init__(self, parameter: dict):
+        parameter["s"] = [1] # 防报错
+        super().__init__(parameter=parameter)
         self.oneDimensionProblemMethod = MethodType.goldenSection
         if type(self) == MultidimensionOptimization:
             self.write_logs("======================================")
@@ -718,14 +734,21 @@ class MultidimensionOptimization(OnedimensionOptimization):
             return self.quasi_newton(method=MethodType.bfgs)
         
 class ConstraintOptimization(Problem):
-    def __init__(self , function: str , gu: list , hv: list , upLimit: list , lowLimit: list , epsilonX , epsilonf , maxStep=100):
+    # def __init__(self , function: str , gu: list , hv: list , upLimit: list , lowLimit: list , epsilonX , epsilonf , maxStep=100):
+    def __init__(self , parameter):
         # x0先输入一个任意值
-        self.epsilonx = epsilonX
-        self.epsilonf = epsilonf
-        self.upLimit  = upLimit
-        self.lowLimit = lowLimit
-        x0 = [0] # 初始化用
-        super().__init__("1" , x0 , maxStep)
+        try:
+            self.epsilonx = parameter["epsilonx"]
+            self.epsilonf = parameter["epsilonf"]
+            self.upLimit  = parameter["upLimit"]
+            self.lowLimit = parameter["lowLimit"]
+            gu = parameter["gu"]
+            hv = parameter["hv"]
+            function = parameter["function"]
+        except:
+            raise ValueError("传入参数不完整")
+        parameter["x0"] = [0] # 初始化用
+        super().__init__(parameter=parameter)
         # 存储gu，hv
         self.function = FractionFunction(function)
         self.gu = []
@@ -938,7 +961,12 @@ class ConstraintOptimization(Problem):
             x0 = x
             f0 = fmin
             penaltyFun = create_penalty_function(self.function, r)
-            p = MultidimensionOptimization(penaltyFun , x , self.epsilonx , self.epsilonf)
+            p = MultidimensionOptimization({
+                "function"  : penaltyFun,
+                "x0"        : x,
+                "epsilonx"  : self.epsilonx,
+                "epsilonf"  : self.epsilonf
+                })
             x, fmin, _ = p.solve(multiDimensionOptimizationMethod)
             try:
                 df = abs((f0 - fmin)/f0)
@@ -1013,7 +1041,12 @@ class ConstraintOptimization(Problem):
             x0 = x
             penaltyFun = create_penalty_function(r)
             # penaltyFun = penalty_function(self.function, self.gu, self.hv)
-            p = MultidimensionOptimization(penaltyFun, x0, self.epsilonx, self.epsilonf)
+            p = MultidimensionOptimization({
+                "function"  : penaltyFun,
+                "x0"        : x0,
+                "epsilonx"  : self.epsilonx,
+                "epsilonf"  : self.epsilonf
+                })
             p.solve(MethodType.bfgs) # 目前只能用powell法，因为有max函数，目前无法求解其梯度或海塞矩阵
             x = p.res.realX
             f = p.res.realF
@@ -1039,12 +1072,16 @@ class ConstraintOptimization(Problem):
             return self.penalty_exterior(*args)
         
 class MultiTargetConstraintOptimization(ConstraintOptimization):
-    def __init__(self, function: list, gu, hv, upLimit, lowLimit, epsilonX, epsilonf, maxStep=100):
+    def __init__(self, parameter: dict):
         """
         多目标约束优化, 目前只支持线性加权
         function = [[f1(X), omega1], [f2(X), omega2] ...]
         omega为权重
         """
+        try:
+            function = parameter["function"]
+        except:
+            raise ValueError("传入参数不完整")
         mergeFunction = None
         for i in function:
             f, w = i[0], i[1]
@@ -1054,5 +1091,5 @@ class MultiTargetConstraintOptimization(ConstraintOptimization):
                 else:
                     f = FractionFunction(f)
                     mergeFunction = f*FractionFunction(str(w))
-
-        super().__init__(mergeFunction, gu, hv, upLimit, lowLimit, epsilonX, epsilonf, maxStep)
+        parameter["function"] = mergeFunction
+        super().__init__(parameter)
