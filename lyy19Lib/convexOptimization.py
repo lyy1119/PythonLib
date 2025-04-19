@@ -1037,3 +1037,22 @@ class ConstraintOptimization(Problem):
             return self.penalty_interior(*args)
         elif method == MethodType.penaltyMethodExterior:
             return self.penalty_exterior(*args)
+        
+class MultiTargetConstraintOptimization(ConstraintOptimization):
+    def __init__(self, function: list, gu, hv, upLimit, lowLimit, epsilonX, epsilonf, maxStep=100):
+        """
+        多目标约束优化, 目前只支持线性加权
+        function = [[f1(X), omega1], [f2(X), omega2] ...]
+        omega为权重
+        """
+        mergeFunction = None
+        for i in function:
+            f, w = i[0], i[1]
+            if isinstance(f, FractionFunction):
+                if mergeFunction:
+                    mergeFunction = mergeFunction + f*FractionFunction(str(w))
+                else:
+                    f = FractionFunction(f)
+                    mergeFunction = f*FractionFunction(str(w))
+
+        super().__init__(mergeFunction, gu, hv, upLimit, lowLimit, epsilonX, epsilonf, maxStep)
