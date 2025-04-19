@@ -144,7 +144,7 @@ class OnedimensionOptimization(Problem):
             self.write_logs("---------------------------------")
             self.write_logs("当前参数")
             self.write_logs("函数：")
-            # self.write_logs(f"{self.function}")
+            self.write_logs(f"{self.function}")
             self.write_logs("初始点：")
             self.write_logs(f"{self.x0}")
             self.write_logs("搜索方向：")
@@ -374,7 +374,6 @@ class OnedimensionOptimization(Problem):
 
 
 class MultidimensionOptimization(OnedimensionOptimization):
-    # def __init__(self, function, x0, epsilonx, epsilonf , maxStep=100):
     def __init__(self, parameter: dict):
         parameter["s"] = [1] # 防报错
         super().__init__(parameter=parameter)
@@ -387,7 +386,7 @@ class MultidimensionOptimization(OnedimensionOptimization):
             self.write_logs("---------------------------------")
             self.write_logs("当前参数")
             self.write_logs("函数：")
-            # self.write_logs(f"{self.function}")
+            self.write_logs(f"{self.function}")
             self.write_logs("初始点：")
             self.write_logs(f"{self.x0}")
             self.write_logs(f"epsilonx = {self.epsilonx}")
@@ -734,7 +733,6 @@ class MultidimensionOptimization(OnedimensionOptimization):
             return self.quasi_newton(method=MethodType.bfgs)
         
 class ConstraintOptimization(Problem):
-    # def __init__(self , function: str , gu: list , hv: list , upLimit: list , lowLimit: list , epsilonX , epsilonf , maxStep=100):
     def __init__(self , parameter):
         # x0先输入一个任意值
         try:
@@ -750,7 +748,8 @@ class ConstraintOptimization(Problem):
         parameter["x0"] = [0] # 初始化用
         super().__init__(parameter=parameter)
         # 存储gu，hv
-        self.function = FractionFunction(function)
+        if isinstance(function, str):
+            self.function = FractionFunction(function)
         self.gu = []
         self.hv = []
         for i in gu:
@@ -763,6 +762,30 @@ class ConstraintOptimization(Problem):
                 i = FractionFunction(i)
             i.update_dimension(self.function.dimension)
             self.hv.append(i)
+
+        if type(self) == ConstraintOptimization:
+            self.write_logs("======================================")
+            self.write_logs("创建约束多维优化问题对象")
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.write_logs(f"时间： {current_time}")
+            self.write_logs("---------------------------------")
+            self.write_logs("当前参数")
+            self.write_logs("函数：")
+            self.write_logs(f"{self.function}")
+            self.write_logs("不等式约束gu(X)：")
+            gustr = ''
+            for i in self.gu:
+                gustr += f"{i}" + "\n"
+            self.write_logs(gustr)
+            self.write_logs("等式约束hv(X)：")
+            hvstr = ''
+            for i in self.hv:
+                hvstr += f"{i}" + '\n'
+            self.write_logs(hvstr)
+            self.write_logs(f"epsilonx = {self.epsilonx}")
+            self.write_logs(f"epsilonf = {self.epsilonf}")
+            self.write_logs(f"最大迭代步长： {self.maxStep}")
+            self.write_logs("======================================\n")
 
     def in_feasible_domain(self , x: list) -> bool:
         for i in self.gu:
@@ -1060,7 +1083,6 @@ class ConstraintOptimization(Problem):
                 break
         self.res = self.Result(x , f , step)
 
-
     def solve(self , method: MethodType , *args):
         if method == MethodType.stochasticDirectionMethod:
             return self.stochasticDirectionMethod()
@@ -1072,6 +1094,27 @@ class ConstraintOptimization(Problem):
             return self.penalty_exterior(*args)
         
 class MultiTargetConstraintOptimization(ConstraintOptimization):
+    class Result(Problem.Result):
+        def __init__(self, X, F, step):
+            self.targetFunctionValue = []
+            super().__init__(X, F, step)
+
+        def __str__(self):
+            s = ''
+            s += "=============================\n"
+            s += "优化结果\n"
+            s +=f"迭代次数：{self.step}\n"
+            s += "X=\n"
+            s +=f"{self.outputX}\n"
+            s +=f"线性加权函数值F={self.outputF}\n"
+            for index, value in enumerate(self.targetFunctionValue):
+                s +=f"第{index}个目标函数的值为：{value}"
+            s += "=============================\n"
+            return s
+
+        def set_target_function_value(self, value: list):
+            self.targetFunctionValue = deepcopy(value)
+
     def __init__(self, parameter: dict):
         """
         多目标约束优化, 目前只支持线性加权
@@ -1082,14 +1125,55 @@ class MultiTargetConstraintOptimization(ConstraintOptimization):
             function = parameter["function"]
         except:
             raise ValueError("传入参数不完整")
+        self.targetFunction = function
         mergeFunction = None
         for i in function:
             f, w = i[0], i[1]
             if isinstance(f, FractionFunction):
-                if mergeFunction:
-                    mergeFunction = mergeFunction + f*FractionFunction(str(w))
-                else:
-                    f = FractionFunction(f)
-                    mergeFunction = f*FractionFunction(str(w))
+                pass
+            else:
+                f = FractionFunction(f)
+            if mergeFunction:
+                mergeFunction = mergeFunction + f*FractionFunction(str(w))
+            else:
+                mergeFunction = f*FractionFunction(str(w))
         parameter["function"] = mergeFunction
         super().__init__(parameter)
+        if type(self) == MultiTargetConstraintOptimization:
+            self.write_logs("======================================")
+            self.write_logs("创建多目标约束多维优化问题对象（线性加权）")
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.write_logs(f"时间： {current_time}")
+            self.write_logs("---------------------------------")
+            self.write_logs("当前参数")
+            self.write_logs("函数：")
+            for index, f in enumerate(self.targetFunction):
+                self.write_logs(f"目标{index+1}：{f}")
+            self.write_logs(f"{self.function}")
+            self.write_logs("不等式约束gu(X)：")
+            gustr = ''
+            for i in self.gu:
+                gustr += f"{i}" + "\n"
+            self.write_logs(gustr)
+            self.write_logs("等式约束hv(X)：")
+            hvstr = ''
+            for i in self.hv:
+                hvstr += f"{i}" + '\n'
+            self.write_logs(hvstr)
+            self.write_logs(f"epsilonx = {self.epsilonx}")
+            self.write_logs(f"epsilonf = {self.epsilonf}")
+            self.write_logs(f"最大迭代步长： {self.maxStep}")
+            self.write_logs("======================================\n")
+
+    def solve(self, method, *args):
+        super().solve(method, *args)
+        x = self.res.realX
+        f = self.res.realF
+        step = self.res.step
+        newResult = self.Result(x, f, step)
+        targetFunctionValue = []
+        for i in self.targetFunction:
+            targetFunctionValue.append(i[0].evaluate(x))
+        newResult.set_target_function_value(targetFunctionValue)
+        self.res = newResult
+        return newResult
