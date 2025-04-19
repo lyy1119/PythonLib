@@ -274,6 +274,7 @@ class OnedimensionOptimization(Problem):
             a1 = b-q*(b-a); x1 = self.x0 + a1*self.s; f1=self.function.evaluate(x1)
             a2 = a+q*(b-a); x2 = self.x0 + a2*self.s; f2=self.function.evaluate(x2)
             while True:
+                self.write_logs(f"黄金分割点：a={a}, a1={a1}, a2={a2}, b={b}")
                 if f1 > f2:
                     a = a1; a1=a2; f1=f2
                     a2=a+q*(b-a); x2=self.x0 + a2*self.s; f2=self.function.evaluate(x2)
@@ -296,6 +297,7 @@ class OnedimensionOptimization(Problem):
             if exitSign <= self.epsilonx:
                 break
             else:
+                self.write_logs("缩小黄金分割区间")
                 a=a1; b=a2
         if f1<f2:
             a = a1; f = f1; x = self.x0 + a1*self.s
@@ -370,6 +372,7 @@ class OnedimensionOptimization(Problem):
                     step *= 2  # 扩大搜索范围
             else:
                 raise RuntimeError("搜索区间查找超过最大迭代次数")
+        self.write_logs(f"找到搜索区间为:[{a1}, {a2}]\n搜索方向：\n{self.s}初始点：\n{x}")
         return a1, a2
 
 
@@ -991,12 +994,13 @@ class ConstraintOptimization(Problem):
                 "epsilonf"  : self.epsilonf
                 })
             x, fmin, _ = p.solve(multiDimensionOptimizationMethod)
+            self.logs += p.logs
             try:
                 df = abs((f0 - fmin)/f0)
             except:
                 df = abs((f0 - fmin))
             dx = (x0 - x).frobenius_norm()
-            self.write_logs(f"step={step} , fmin={fmin} , x=\n{x}")
+            self.write_logs(f"当前步：step={step} , fmin={fmin} , x=\n{x}")
             if (df <= Decimal(str(0.00001)) or dx <= Decimal(str(0.001))):
                 break
         fmin = self.function.evaluate(x)
