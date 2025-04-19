@@ -731,13 +731,15 @@ class ConstraintOptimization(Problem):
         self.gu = []
         self.hv = []
         for i in gu:
-            f = FractionFunction(i)
-            f.update_dimension(self.function.dimension)
-            self.gu.append(f)
+            if not isinstance(i, MathFunction):
+                i = FractionFunction(i)
+            i.update_dimension(self.function.dimension)
+            self.gu.append(i)
         for i in hv:
-            f = FractionFunction(i)
-            f.update_dimension(self.function.dimension)
-            self.hv.append(f)
+            if not isinstance(i, MathFunction):
+                i = FractionFunction(i)
+            i.update_dimension(self.function.dimension)
+            self.hv.append(i)
 
     def in_feasible_domain(self , x: list) -> bool:
         for i in self.gu:
