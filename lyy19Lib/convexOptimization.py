@@ -1108,7 +1108,7 @@ class MultiTargetConstraintOptimization(ConstraintOptimization):
             s +=f"{self.outputX}\n"
             s +=f"线性加权函数值F={self.outputF}\n"
             for index, value in enumerate(self.targetFunctionValue):
-                s +=f"第{index}个目标函数的值为：{value}"
+                s +=f"第{index}个目标函数的值为：{value}\n"
             s += "=============================\n"
             return s
 
