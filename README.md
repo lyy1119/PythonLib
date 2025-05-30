@@ -29,9 +29,3 @@ pip install git+https://github.com/lyy1119/PythonLib.git@main
 项目自带一个测试文件，为test.py  
 
 ## 文档
-
-### 程序框图
-
-**1.进退法确定搜索区间**  
-
-![进退法确定搜索区间.drawio](https://raw.githubusercontent.com/lyy1119/Imgs/main/img/进退法确定搜索区间.drawio.png)
