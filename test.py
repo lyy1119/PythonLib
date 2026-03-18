@@ -4,9 +4,9 @@ import os
 sys.path.insert(0, os.path.abspath("../my_lib"))  # 指向库所在目录
 # 库的测试程序
 
-from lyy19Lib import *
-from lyy19Lib.mathFunction import *
-from lyy19Lib.convexOptimization import *
+from lycarusUtils import *
+from lycarusUtils.mathFunction import *
+from lycarusUtils.convexOptimization import *
 
 def test_mathfunction():
     print("这是MathFunction类库的测试单元！")
