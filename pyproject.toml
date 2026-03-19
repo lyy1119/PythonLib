@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lycarusLab"
-version = "2.0.0-alpha.3"
+version = "3.0.0-alpha.1"
 readme = "README.md"
 description = "lycarus python codes"
 authors = [{name = "lycarus", email = "me@lycarus.cn"}]
