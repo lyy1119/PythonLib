@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath("../my_lib"))  # 指向库所在目录
 
 from lycarusLab import *
 from lycarusLab.mathFunction import *
-from lycarusLab.convexOptimization import *
+from lycarusLab.convexOptimization import * # pyright: ignore[reportGeneralTypeIssues]
 
 def test_mathfunction():
     print("这是MathFunction类库的测试单元！")
@@ -36,7 +36,7 @@ def test_mathfunction():
         [1]
     ]
     x = MathFunction.DecimalMatrix(x)
-    value = function.evaluate(x)
+    value = function.evaluate(x) # type: ignore
     print(r'print(value["str"])')
     print("[Out]: " , end='')
     print(value)
@@ -183,7 +183,7 @@ def test_mathfunction():
 
     print(f"5*fa")
     print(5*fa)
-    print(f"函数维度:{(5*fa).dimension}")
+    print(f"函数维度:{(5*fa).dimension}") # type: ignore
 
     print()
 
@@ -279,12 +279,12 @@ def test_convexOptimization():
         "epsilonx"  : 0.1,
         "epsilonf"  : 0.15,
     })
-    q.searchInterval = [Decimal(-3) , Decimal(5)]
+    q.searchInterval = [Decimal(-3) , Decimal(5)] # type: ignore
     q.solve(MethodType.goldenSection)
     print(q.res)
 # 二次插值测试 
     print("二次插值测试")
-    q.searchInterval = [Decimal(-3) , Decimal(5)]
+    q.searchInterval = [Decimal(-3) , Decimal(5)] # type: ignore
     q.solve(MethodType.quadraticInterpolation)
     print(q.res)
 
