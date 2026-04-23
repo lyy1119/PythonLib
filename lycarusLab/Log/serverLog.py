@@ -114,7 +114,7 @@ class ServerLog:
 # --- 使用场景演示 ---
 if __name__ == "__main__":
     # 场景 1: 标准长期运行程序日志 (带时间，全行颜色)
-    logger = Log(outputFile="server.log")
+    logger = ServerLog(outputFile="server.log")
     logger.info("系统服务已启动")
     logger.succ("数据库连接成功")
     logger.warn("磁盘空间占用超过 80%")
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     logger.fatal("内核内存溢出，进程强制退出")
 
     # 场景 2: 仅渲染标签颜色，自定义部分等级颜色
-    customLogger = Log(
+    customLogger = ServerLog(
         colorSignOnly=True,
         colorStyle={"warn": "red"}, # 将警告也设为红色
         timeFormat="%H:%M:%S"      # 缩短时间格式
