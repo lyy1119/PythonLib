@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, Final, Dict
 from color import COLOR_CODES
 
-class Log:
+class ServerLog:
     # 颜色配置映射
     COLOR_CODES = COLOR_CODES
 
