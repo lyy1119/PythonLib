@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, Final, Dict
-from color import COLOR_CODES
+from .color import COLOR_CODES
 
 class ServerLog:
     # 颜色配置映射

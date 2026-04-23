@@ -1,7 +1,7 @@
 import os
 import time
 from typing import Optional, Final, Dict
-from color import COLOR_CODES
+from .color import COLOR_CODES
 
 class HackLog:
     # 基础 ANSI 颜色映射表
