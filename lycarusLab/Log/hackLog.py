@@ -23,7 +23,7 @@ class HackLog:
 
         # 1. 设置默认颜色配置
         self.currentStyle: Dict[str, str] = {
-            "stat": "white",
+            "stat": "noColor",
             "succ": "green",
             "fail": "red",
             "warn": "yellow",
@@ -57,9 +57,9 @@ class HackLog:
         rawContent = f" {ts}{message}"
 
         # 获取颜色代码
-        colorName = self.currentStyle.get(styleKey, "white")
-        colorCode = self.COLOR_CODES.get(colorName, self.COLOR_CODES["white"])
-        endCode = self.COLOR_CODES["end"]
+        colorName = self.currentStyle.get(styleKey, "noColor")
+        colorCode = self.COLOR_CODES.get(colorName, self.COLOR_CODES["noColor"])
+        endCode = self.COLOR_CODES["end"] if colorCode else ""
 
         # 处理带颜色的输出
         if self.noColor:

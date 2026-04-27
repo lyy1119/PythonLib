@@ -1,6 +1,8 @@
 from typing import Optional, Final, Dict
 
 COLOR_CODES = {
+    "noColor": "",
+
     # 标准色 (High Intensity)
     "white":  "\033[97m",
     "gray":   "\033[90m",

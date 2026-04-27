@@ -34,7 +34,7 @@ class ServerLog:
 
         # 默认颜色样式
         self.currentStyle: Dict[str, str] = {
-            "info": "white",
+            "info": "noColor",
             "succ": "green",
             "warn": "yellow",
             "error": "red",
@@ -61,9 +61,9 @@ class ServerLog:
         rawMessage = f" {text}"
 
         # 获取颜色
-        colorName = self.currentStyle.get(styleKey, "white")
-        colorCode = self.COLOR_CODES.get(colorName, self.COLOR_CODES["white"])
-        endCode = self.COLOR_CODES["end"]
+        colorName = self.currentStyle.get(styleKey, "noColor")
+        colorCode = self.COLOR_CODES.get(colorName, self.COLOR_CODES["noColor"])
+        endCode = self.COLOR_CODES["end"] if colorCode else ""
 
         # 构造控制台输出 (时间戳不带颜色)
         if self.noColor:
